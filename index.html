@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Generador Oficial de Análisis FODA – UTESA</title>
+  
+  <!-- Tailwind CSS via CDN para interfaz moderna -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            utesa: {
+              green: '#006837',
+              darkgreen: '#004d25',
+              lightgreen: '#2e7d32',
+              gold: '#c88a24',
+              golddark: '#a06810',
+              palegreen: '#e8f5e9'
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Hoja de estilos personalizada con formato institucional y reglas de impresión -->
+  <link rel="stylesheet" href="styles.css">
+
+  <!-- Scripts base: librería docx offline y logotipo oficial en base64 -->
+  <script src="header-base64.js"></script>
+  <script src="docx.iife.js"></script>
+</head>
+<body class="bg-slate-100 text-slate-800 antialiased min-h-screen flex flex-col">
+
+  <!-- Header Superior Institucional (No imprimible) -->
+  <header class="no-print bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 py-3 flex flex-wrap items-center justify-between gap-4">
+      
+      <!-- Logo y Título -->
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-full bg-utesa-green flex items-center justify-center text-white font-serif font-bold text-lg shadow-inner">
+          U
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="text-sm font-black tracking-wider text-utesa-green uppercase">UTESA</span>
+            <span class="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 font-semibold">Sistema Corporativo</span>
+            <span class="hidden sm:inline-flex text-[11px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-medium">Norma: Century Gothic 12pt | Interlineado 1.5 | Justificado</span>
+          </div>
+          <h1 class="text-base font-bold text-slate-900 leading-tight">Generador de Análisis FODA de Carrera</h1>
+          <p class="text-xs text-slate-500">Formato Oficial homologado para Directores de Carrera (Plan Operativo Anual e ISOTools)</p>
+        </div>
+      </div>
+
+      <!-- Acciones Principales -->
+      <div class="flex items-center gap-2 flex-wrap">
+        <button type="button" onclick="regenerateAnalysis()" class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-lg bg-amber-500 hover:bg-amber-600 text-white transition shadow-sm active:scale-95" title="Regenera automáticamente las secciones 1, 2, 4, 5 y 6 combinando los factores actuales">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+          ⚡ Regenerar Análisis
+        </button>
+
+        <button type="button" onclick="printDocument()" class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 transition shadow-sm active:scale-95">
+          <svg class="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+          Imprimir / PDF
+        </button>
+
+        <button type="button" id="btnDownloadWord" onclick="downloadWordDocument()" class="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold rounded-lg bg-utesa-green hover:bg-utesa-darkgreen text-white transition shadow-sm active:scale-95" title="Genera un archivo Word (.docx) con el timbrado institucional, tablas completas y espacio para firma">
+          <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+          Descargar Word (.docx)
+        </button>
+      </div>
+
+    </div>
+
+    <!-- Barra de Plantillas Rápidas -->
+    <div class="bg-slate-50 border-t border-slate-200 px-4 sm:px-6 lg:px-8 py-2 flex items-center justify-between text-xs text-slate-600 flex-wrap gap-2">
+      <div class="flex items-center gap-2 flex-wrap">
+        <span class="font-semibold text-slate-700">Plantillas de ejemplo:</span>
+        <button type="button" onclick="loadTemplate('iel')" class="px-2.5 py-1 rounded-md bg-white border border-slate-200 hover:border-utesa-green hover:text-utesa-green transition font-medium text-slate-700 shadow-2xs">
+          ⚡ Ing. Eléctrica (IEL)
+        </button>
+        <button type="button" onclick="loadTemplate('isc')" class="px-2.5 py-1 rounded-md bg-white border border-slate-200 hover:border-utesa-green hover:text-utesa-green transition font-medium text-slate-700 shadow-2xs">
+          💻 Ing. Sistemas (ISC)
+        </button>
+        <button type="button" onclick="loadTemplate('med')" class="px-2.5 py-1 rounded-md bg-white border border-slate-200 hover:border-utesa-green hover:text-utesa-green transition font-medium text-slate-700 shadow-2xs">
+          🩺 Medicina (MED)
+        </button>
+        <button type="button" onclick="loadTemplate('adm')" class="px-2.5 py-1 rounded-md bg-white border border-slate-200 hover:border-utesa-green hover:text-utesa-green transition font-medium text-slate-700 shadow-2xs">
+          📊 Adm. Empresas (ADM)
+        </button>
+      </div>
+      <button type="button" onclick="clearForm()" class="text-rose-600 hover:text-rose-800 font-medium transition flex items-center gap-1">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+        Limpiar formulario
+      </button>
+    </div>
+  </header>
+
+  <!-- Contenedor Principal: 2 Columnas (Editor a la izquierda, Vista Previa a la derecha) -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      
+      <!-- COLUMNA IZQUIERDA: Panel de Trabajo (Formulario & Ajustes) -->
+      <section class="no-print lg:col-span-5 bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        
+        <!-- Pestañas del Editor -->
+        <div class="border-b border-slate-200 bg-slate-50 flex">
+          <button type="button" id="tabBtnForm" onclick="switchTab('form')" class="flex-1 py-3 px-4 text-xs font-bold text-utesa-green border-b-2 border-utesa-green bg-white transition flex items-center justify-center gap-1.5">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+            1. Formulario FODA
+          </button>
+          <button type="button" id="tabBtnReview" onclick="switchTab('review')" class="flex-1 py-3 px-4 text-xs font-semibold text-slate-500 hover:text-slate-800 transition flex items-center justify-center gap-1.5">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+            2. Análisis y Conclusión
+          </button>
+          <button type="button" id="tabBtnGuide" onclick="switchTab('guide')" class="py-3 px-4 text-xs font-semibold text-slate-500 hover:text-slate-800 transition flex items-center justify-center gap-1">
+            <svg class="w-4 h-4 text-amber-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path></svg>
+            Guía
+          </button>
+        </div>
+
+        <!-- CONTENIDO PESTAÑA 1: FORMULARIO FODA -->
+        <div id="tabContentForm" class="p-5 max-h-[calc(100vh-210px)] overflow-y-auto space-y-6">
+          
+          <!-- Bloque A: Datos Generales -->
+          <div>
+            <h2 class="text-xs font-bold uppercase tracking-wider text-utesa-green flex items-center gap-1.5 mb-3">
+              <span class="w-2 h-2 rounded-full bg-utesa-green"></span>
+              Datos Generales de la Carrera
+            </h2>
+
+            <div class="space-y-3">
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Nombre de la Carrera</label>
+                <input type="text" id="inputCarrera" class="w-full text-xs p-2.5 border border-slate-300 rounded-lg focus:border-utesa-green focus:ring-1 focus:ring-utesa-green transition outline-none" placeholder="Ej: Ingeniería Industrial" />
+              </div>
+
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">Siglas / Código</label>
+                  <input type="text" id="inputSiglas" class="w-full text-xs p-2.5 border border-slate-300 rounded-lg focus:border-utesa-green focus:ring-1 focus:ring-utesa-green transition outline-none" placeholder="Ej: IIN" />
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">Año Académico</label>
+                  <input type="text" id="inputAno" class="w-full text-xs p-2.5 border border-slate-300 rounded-lg focus:border-utesa-green focus:ring-1 focus:ring-utesa-green transition outline-none" placeholder="Ej: 2026" />
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Facultad</label>
+                <input type="text" id="inputFacultad" class="w-full text-xs p-2.5 border border-slate-300 rounded-lg focus:border-utesa-green focus:ring-1 focus:ring-utesa-green transition outline-none" placeholder="Ej: Arquitectura e Ingenierías" />
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Director(a) de la Carrera</label>
+                <input type="text" id="inputDirector" class="w-full text-xs p-2.5 border border-slate-300 rounded-lg focus:border-utesa-green focus:ring-1 focus:ring-utesa-green transition outline-none" placeholder="Ej: Ing. María Santos, M.Sc." />
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Institución / Sede</label>
+                <input type="text" id="inputInstitucion" class="w-full text-xs p-2.5 border border-slate-300 rounded-lg focus:border-utesa-green focus:ring-1 focus:ring-utesa-green transition outline-none" placeholder="Universidad Tecnológica de Santiago (UTESA), Sede" />
+              </div>
+
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">Período analizado</label>
+                  <input type="text" id="inputPeriodo" class="w-full text-xs p-2.5 border border-slate-300 rounded-lg focus:border-utesa-green focus:ring-1 focus:ring-utesa-green transition outline-none" placeholder="Año académico 2026 (enero – octubre)" />
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">Fecha del Documento</label>
+                  <input type="text" id="inputFecha" class="w-full text-xs p-2.5 border border-slate-300 rounded-lg focus:border-utesa-green focus:ring-1 focus:ring-utesa-green transition outline-none" placeholder="13 de octubre de 2026" />
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Fuentes de Información</label>
+                <textarea id="inputFuentes" rows="2" class="w-full text-xs p-2.5 border border-slate-300 rounded-lg focus:border-utesa-green focus:ring-1 focus:ring-utesa-green transition outline-none" placeholder="Evidencias del POA, calendario cuatrimestral, comunicaciones a Vicerrectoría Académica..."></textarea>
+              </div>
+            </div>
+          </div>
+
+          <hr class="border-slate-200">
+
+          <!-- Bloque B: Matriz FODA (Entrada de Factores Esenciales) -->
+          <div>
+            <div class="flex items-center justify-between mb-3">
+              <h2 class="text-xs font-bold uppercase tracking-wider text-utesa-green flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-utesa-green"></span>
+                Matriz FODA – Factores Esenciales
+              </h2>
+              <span class="text-[11px] text-slate-400">Edita o añade viñetas</span>
+            </div>
+
+            <div class="space-y-5">
+              
+              <!-- Fortalezas -->
+              <div class="p-3.5 rounded-lg border border-emerald-200 bg-emerald-50/40">
+                <div class="flex items-center justify-between mb-2">
+                  <div class="flex items-center gap-1.5">
+                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-600"></span>
+                    <span class="text-xs font-bold text-emerald-900 uppercase">Fortalezas (Internas)</span>
+                  </div>
+                  <button type="button" onclick="addFactorItem('fortalezas')" class="text-xs text-emerald-700 hover:text-emerald-900 font-semibold flex items-center gap-1 bg-white px-2 py-0.5 rounded border border-emerald-300 shadow-2xs">
+                    + Añadir
+                  </button>
+                </div>
+                <div id="fortalezasList" class="space-y-1"></div>
+              </div>
+
+              <!-- Debilidades -->
+              <div class="p-3.5 rounded-lg border border-rose-200 bg-rose-50/40">
+                <div class="flex items-center justify-between mb-2">
+                  <div class="flex items-center gap-1.5">
+                    <span class="w-2.5 h-2.5 rounded-full bg-rose-600"></span>
+                    <span class="text-xs font-bold text-rose-900 uppercase">Debilidades (Internas)</span>
+                  </div>
+                  <button type="button" onclick="addFactorItem('debilidades')" class="text-xs text-rose-700 hover:text-rose-900 font-semibold flex items-center gap-1 bg-white px-2 py-0.5 rounded border border-rose-300 shadow-2xs">
+                    + Añadir
+                  </button>
+                </div>
+                <div id="debilidadesList" class="space-y-1"></div>
+              </div>
+
+              <!-- Oportunidades -->
+              <div class="p-3.5 rounded-lg border border-teal-200 bg-teal-50/40">
+                <div class="flex items-center justify-between mb-2">
+                  <div class="flex items-center gap-1.5">
+                    <span class="w-2.5 h-2.5 rounded-full bg-teal-600"></span>
+                    <span class="text-xs font-bold text-teal-900 uppercase">Oportunidades (Externas)</span>
+                  </div>
+                  <button type="button" onclick="addFactorItem('oportunidades')" class="text-xs text-teal-700 hover:text-teal-900 font-semibold flex items-center gap-1 bg-white px-2 py-0.5 rounded border border-teal-300 shadow-2xs">
+                    + Añadir
+                  </button>
+                </div>
+                <div id="oportunidadesList" class="space-y-1"></div>
+              </div>
+
+              <!-- Amenazas -->
+              <div class="p-3.5 rounded-lg border border-amber-200 bg-amber-50/40">
+                <div class="flex items-center justify-between mb-2">
+                  <div class="flex items-center gap-1.5">
+                    <span class="w-2.5 h-2.5 rounded-full bg-amber-600"></span>
+                    <span class="text-xs font-bold text-amber-900 uppercase">Amenazas (Externas)</span>
+                  </div>
+                  <button type="button" onclick="addFactorItem('amenazas')" class="text-xs text-amber-700 hover:text-amber-900 font-semibold flex items-center gap-1 bg-white px-2 py-0.5 rounded border border-amber-300 shadow-2xs">
+                    + Añadir
+                  </button>
+                </div>
+                <div id="amenazasList" class="space-y-1"></div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- Botón de Acción -->
+          <div class="pt-2">
+            <button type="button" onclick="regenerateAnalysis()" class="w-full py-3 px-4 bg-utesa-green hover:bg-utesa-darkgreen text-white text-xs font-bold rounded-lg transition shadow-md flex items-center justify-center gap-2">
+              <svg class="w-4 h-4 text-amber-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+              Sincronizar y Generar Análisis Automático
+            </button>
+            <p class="text-[11px] text-slate-500 text-center mt-1.5">Genera la prosa narrativa de las secciones 1, 2, 4, 5 y 6 automáticamente.</p>
+          </div>
+
+        </div>
+
+        <!-- CONTENIDO PESTAÑA 2: REVISIÓN DE ANÁLISIS Y ESTRATEGIAS -->
+        <div id="tabContentReview" class="p-5 max-h-[calc(100vh-210px)] overflow-y-auto space-y-5 hidden">
+          <div class="bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-900 leading-relaxed flex items-start gap-2">
+            <svg class="w-4 h-4 text-amber-600 mt-0.5 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path></svg>
+            <div>
+              <strong>Textos autogenerados:</strong> Puedes revisar y afinar cualquier párrafo o estrategia. Los cambios se reflejarán instantáneamente en la vista previa y en el Word descargable.
+            </div>
+          </div>
+
+          <!-- 1. Introducción -->
+          <div>
+            <label class="block text-xs font-bold text-slate-800 mb-1">1. Introducción</label>
+            <textarea id="textIntro" rows="3" class="w-full text-xs p-2.5 border border-slate-300 rounded-lg focus:border-utesa-green outline-none"></textarea>
+          </div>
+
+          <!-- 2. Metodología -->
+          <div>
+            <label class="block text-xs font-bold text-slate-800 mb-1">2. Metodología</label>
+            <textarea id="textMetodologia" rows="4" class="w-full text-xs p-2.5 border border-slate-300 rounded-lg focus:border-utesa-green outline-none"></textarea>
+          </div>
+
+          <!-- 4. Análisis de los factores -->
+          <div>
+            <label class="block text-xs font-bold text-slate-800 mb-1">4.1 Análisis de Fortalezas</label>
+            <textarea id="textAnalisisFortalezas" rows="3" class="w-full text-xs p-2.5 border border-slate-300 rounded-lg focus:border-utesa-green outline-none"></textarea>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-800 mb-1">4.2 Análisis de Debilidades</label>
+            <textarea id="textAnalisisDebilidades" rows="3" class="w-full text-xs p-2.5 border border-slate-300 rounded-lg focus:border-utesa-green outline-none"></textarea>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-800 mb-1">4.3 Análisis de Oportunidades</label>
+            <textarea id="textAnalisisOportunidades" rows="3" class="w-full text-xs p-2.5 border border-slate-300 rounded-lg focus:border-utesa-green outline-none"></textarea>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-800 mb-1">4.4 Análisis de Amenazas</label>
+            <textarea id="textAnalisisAmenazas" rows="3" class="w-full text-xs p-2.5 border border-slate-300 rounded-lg focus:border-utesa-green outline-none"></textarea>
+          </div>
+
+          <!-- 5. Estrategias Cruzadas -->
+          <div>
+            <label class="block text-xs font-bold text-slate-800 mb-1">5. FO (Fortalezas para aprovechar Oportunidades)</label>
+            <textarea id="textEstrategiasFO" rows="3" class="w-full text-xs p-2.5 border border-slate-300 rounded-lg focus:border-utesa-green outline-none"></textarea>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-800 mb-1">5. DO (Superar Debilidades aprovechando Oportunidades)</label>
+            <textarea id="textEstrategiasDO" rows="3" class="w-full text-xs p-2.5 border border-slate-300 rounded-lg focus:border-utesa-green outline-none"></textarea>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-800 mb-1">5. FA (Fortalezas para enfrentar Amenazas)</label>
+            <textarea id="textEstrategiasFA" rows="3" class="w-full text-xs p-2.5 border border-slate-300 rounded-lg focus:border-utesa-green outline-none"></textarea>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-800 mb-1">5. DA (Reducir Debilidades y evitar Amenazas)</label>
+            <textarea id="textEstrategiasDA" rows="3" class="w-full text-xs p-2.5 border border-slate-300 rounded-lg focus:border-utesa-green outline-none"></textarea>
+          </div>
+
+          <!-- 6. Conclusión -->
+          <div>
+            <label class="block text-xs font-bold text-slate-800 mb-1">6. Conclusión Institucional</label>
+            <textarea id="textConclusion" rows="4" class="w-full text-xs p-2.5 border border-slate-300 rounded-lg focus:border-utesa-green outline-none"></textarea>
+          </div>
+        </div>
+
+        <!-- CONTENIDO PESTAÑA 3: GUÍA PARA EL DIRECTOR -->
+        <div id="tabContentGuide" class="p-5 max-h-[calc(100vh-210px)] overflow-y-auto space-y-4 text-xs text-slate-600 hidden leading-relaxed">
+          <h3 class="font-bold text-sm text-utesa-green">Guía y Formato Oficial de Presentación (UTESA)</h3>
+          
+          <div class="p-3 bg-emerald-50/70 border border-emerald-200 rounded-lg">
+            <h4 class="font-bold text-emerald-900 mb-2 flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-emerald-600"></span>
+              Norma de Formato y Tipografía Institucional:
+            </h4>
+            <ul class="space-y-1.5 text-emerald-950 font-medium pl-1">
+              <li>✓ <strong>Hoja timbrada institucional:</strong> Con el logotipo corporativo oficial y pie de página con datos institucionales (incorporados automáticamente).</li>
+              <li>✓ <strong>Fuente Century Gothic, tamaño 12:</strong> Aplicada de manera estricta tanto en la visualización web como en el documento Word (.docx) descargable.</li>
+              <li>✓ <strong>Encabezados y títulos en negrita:</strong> Secciones, subsecciones y cuadrantes con formato destacado.</li>
+              <li>✓ <strong>Texto con alineación justificada:</strong> Todos los párrafos y descripciones alineados justificadamente.</li>
+              <li>✓ <strong>Interlineado de 1.5:</strong> Espaciado vertical reglamentario de 1.5 líneas.</li>
+              <li>✓ <strong>Márgenes y presentación institucional:</strong> Márgenes homologados (superior e inferior 2.5 cm, laterales 3 cm).</li>
+              <li>✓ <strong>Fecha de realización:</strong> Indicada claramente al inicio del documento.</li>
+              <li>✓ <strong>Carga en ISOTools:</strong> El Word descargado se puede guardar o imprimir en PDF para su radicación directa en la plataforma ISOTools de UTESA.</li>
+            </ul>
+          </div>
+
+          <div class="p-3 bg-slate-50 rounded-lg border border-slate-200">
+            <h4 class="font-bold text-slate-800 mb-1">1. ¿Qué datos debe completar el Director?</h4>
+            <p>Solo necesitas ingresar los datos de tu carrera, tu nombre y las <strong>viñetas esenciales de tus Fortalezas, Debilidades, Oportunidades y Amenazas</strong>. El sistema se encarga de redactar con prosa académica de nivel ejecutivo las secciones 1, 2, 4 (4.1 a 4.4), 5 (FO, DO, FA, DA) y 6 (Conclusión).</p>
+          </div>
+
+          <div class="p-3 bg-slate-50 rounded-lg border border-slate-200">
+            <h4 class="font-bold text-slate-800 mb-1">2. Firma y Sellado</h4>
+            <p>El documento descargable incluye la línea y bloque de firma limpio (sin firmas ni sellos preimpresos). Tras descargar el archivo Word, imprímelo, estámpale tu firma manuscrita y el sello físico de la Dirección de Carrera antes de digitalizarlo para ISOTools.</p>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- COLUMNA DERECHA: Vista Previa Fiel al Formato UTESA -->
+      <section class="lg:col-span-7 flex flex-col items-center">
+        
+        <!-- Barra de herramientas de la vista previa -->
+        <div class="no-print w-full max-w-[850px] mb-3 flex items-center justify-between px-2 text-xs text-slate-500">
+          <span class="flex items-center gap-1.5 font-medium">
+            <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+            Vista Previa en Tiempo Real (Formato UTESA)
+          </span>
+          <div class="flex items-center gap-2">
+            <button type="button" onclick="printDocument()" class="hover:text-utesa-green transition flex items-center gap-1">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+              Imprimir
+            </button>
+            <span>•</span>
+            <button type="button" onclick="downloadWordDocument()" class="hover:text-utesa-green font-bold text-utesa-green transition flex items-center gap-1">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+              Descargar .docx
+            </button>
+          </div>
+        </div>
+
+        <!-- Hoja de Papel Simulada (Idéntica al PDF) -->
+        <div id="previewDocument" class="document-sheet">
+          <!-- El contenido se inyecta dinámicamente mediante app.js -->
+        </div>
+
+      </section>
+
+    </div>
+  </main>
+
+  <!-- Notificación Toast -->
+  <div id="toast" class="no-print fixed bottom-6 right-6 z-50 bg-slate-900 text-white text-xs px-4 py-2.5 rounded-lg shadow-xl opacity-0 pointer-events-none transition-all duration-300 flex items-center gap-2">
+    Notificación
+  </div>
+
+  <!-- Script para alternar pestañas del panel lateral -->
+  <script>
+    function switchTab(tab) {
+      const tabs = ['form', 'review', 'guide'];
+      tabs.forEach(t => {
+        const btn = document.getElementById('tabBtn' + t.charAt(0).toUpperCase() + t.slice(1));
+        const content = document.getElementById('tabContent' + t.charAt(0).toUpperCase() + t.slice(1));
+        if (t === tab) {
+          btn.className = "flex-1 py-3 px-4 text-xs font-bold text-utesa-green border-b-2 border-utesa-green bg-white transition flex items-center justify-center gap-1.5";
+          content.classList.remove('hidden');
+        } else {
+          btn.className = "flex-1 py-3 px-4 text-xs font-semibold text-slate-500 hover:text-slate-800 transition flex items-center justify-center gap-1.5";
+          content.classList.add('hidden');
+        }
+      });
+    }
+  </script>
+
+  <!-- Lógica Principal de la Aplicación -->
+  <script src="app.js"></script>
+
+</body>
+</html>

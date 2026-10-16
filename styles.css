@@ -1,0 +1,326 @@
+/* UTESA Brand Colors & Styles */
+:root {
+  --utesa-green-dark: #004d25;
+  --utesa-green: #006837;
+  --utesa-green-light: #2e7d32;
+  --utesa-green-pale: #e8f5e9;
+  --utesa-gold: #c88a24;
+  --utesa-gold-dark: #a06810;
+  --utesa-gold-pale: #fff8e7;
+  --foda-positive-bg: #1e5e2a;
+  --foda-positive-text: #2e6930;
+  --foda-negative-bg: #8b2816;
+  --foda-negative-text: #9e3219;
+  --neutral-bg: #f8fafc;
+  --paper-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  background-color: #f1f5f9;
+  color: #1e293b;
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* ==========================================================================
+   Simulated Document Paper - Formato Institucional Oficial UTESA
+   Norma: Fuente Century Gothic, Tamaño 12, Títulos en negrita,
+   Alineación justificada, Interlineado de 1.5
+   ========================================================================== */
+.document-sheet {
+  background: white;
+  width: 100%;
+  max-width: 850px;
+  min-height: 1100px;
+  margin: 0 auto 30px auto;
+  padding: 45px 50px 40px 50px;
+  box-shadow: var(--paper-shadow);
+  border-radius: 4px;
+  position: relative;
+  box-sizing: border-box;
+  font-family: "Century Gothic", CenturyGothic, AppleGothic, "Segoe UI", sans-serif;
+  color: #1e293b;
+}
+
+/* Document typography */
+.doc-header-img {
+  width: 100%;
+  max-height: 85px;
+  object-fit: contain;
+  margin-bottom: 25px;
+}
+
+.doc-title-main {
+  font-family: "Century Gothic", CenturyGothic, AppleGothic, sans-serif;
+  font-size: 16pt;
+  font-weight: 700;
+  color: #111827;
+  text-align: center;
+  margin-bottom: 6px;
+  line-height: 1.35;
+}
+
+.doc-subtitle-1 {
+  font-family: "Century Gothic", CenturyGothic, AppleGothic, sans-serif;
+  font-size: 13pt;
+  font-weight: 700;
+  color: #374151;
+  text-align: center;
+  margin-bottom: 5px;
+}
+
+.doc-subtitle-2 {
+  font-family: "Century Gothic", CenturyGothic, AppleGothic, sans-serif;
+  font-size: 12pt;
+  font-weight: 400;
+  color: #4b5563;
+  text-align: center;
+  margin-bottom: 12px;
+}
+
+.doc-date {
+  font-family: "Century Gothic", CenturyGothic, AppleGothic, sans-serif;
+  font-size: 11pt;
+  font-style: italic;
+  color: #6b7280;
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+/* Document Meta Table */
+.doc-meta-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 25px;
+  font-family: "Century Gothic", CenturyGothic, AppleGothic, sans-serif;
+  font-size: 11pt;
+}
+
+.doc-meta-table th, .doc-meta-table td {
+  border: 1px solid #d1d5db;
+  padding: 8px 12px;
+  vertical-align: top;
+  line-height: 1.5;
+}
+
+.doc-meta-table th {
+  background-color: #f9fafb;
+  font-weight: 700;
+  color: #111827;
+  text-align: left;
+  width: 25%;
+}
+
+.doc-meta-table td {
+  color: #374151;
+}
+
+/* Section Headings - Encabezados y títulos en negrita */
+.doc-section-title {
+  font-family: "Century Gothic", CenturyGothic, AppleGothic, sans-serif;
+  font-size: 13pt;
+  font-weight: 700;
+  color: #111827;
+  margin-top: 24px;
+  margin-bottom: 10px;
+}
+
+.doc-subsection-title {
+  font-family: "Century Gothic", CenturyGothic, AppleGothic, sans-serif;
+  font-size: 12pt;
+  font-weight: 700;
+  color: #1f2937;
+  margin-top: 16px;
+  margin-bottom: 8px;
+}
+
+/* Texto de párrafos: Century Gothic, tamaño 12pt, alineación justificada, interlineado 1.5 */
+.doc-p {
+  font-family: "Century Gothic", CenturyGothic, AppleGothic, sans-serif;
+  font-size: 12pt;
+  line-height: 1.5;
+  color: #27272a;
+  text-align: justify;
+  margin-bottom: 14px;
+}
+
+/* SWOT Matrix Table in document */
+.doc-swot-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 18px 0 25px 0;
+  font-family: "Century Gothic", CenturyGothic, AppleGothic, sans-serif;
+  font-size: 11pt;
+}
+
+.doc-swot-table th, .doc-swot-table td {
+  border: 1px solid #d1d5db;
+  padding: 10px 14px;
+  vertical-align: top;
+  width: 50%;
+  line-height: 1.45;
+}
+
+.doc-swot-th-pos {
+  background-color: var(--foda-positive-bg);
+  color: #ffffff;
+  font-size: 11pt;
+  font-weight: 700;
+  text-align: center;
+  letter-spacing: 0.5px;
+  padding: 9px 10px !important;
+}
+
+.doc-swot-th-neg {
+  background-color: var(--foda-negative-bg);
+  color: #ffffff;
+  font-size: 11pt;
+  font-weight: 700;
+  text-align: center;
+  letter-spacing: 0.5px;
+  padding: 9px 10px !important;
+}
+
+.doc-swot-subhdr-pos {
+  font-weight: 700;
+  color: var(--foda-positive-text);
+  font-size: 11.5pt;
+  margin-bottom: 9px;
+  text-transform: uppercase;
+}
+
+.doc-swot-subhdr-neg {
+  font-weight: 700;
+  color: var(--foda-negative-text);
+  font-size: 11.5pt;
+  margin-bottom: 9px;
+  text-transform: uppercase;
+}
+
+.doc-swot-list {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.doc-swot-list li {
+  margin-bottom: 8px;
+  line-height: 1.5;
+  color: #1f2937;
+  text-align: justify;
+}
+
+/* Cross SWOT Table */
+.doc-cross-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 18px 0 24px 0;
+  font-family: "Century Gothic", CenturyGothic, AppleGothic, sans-serif;
+  font-size: 11pt;
+}
+
+.doc-cross-table th, .doc-cross-table td {
+  border: 1px solid #d1d5db;
+  padding: 10px 14px;
+  vertical-align: top;
+}
+
+.doc-cross-th {
+  background-color: var(--foda-positive-bg);
+  color: white;
+  font-weight: 700;
+  padding: 9px 12px;
+  text-align: left;
+}
+
+.doc-cross-type {
+  font-weight: 700;
+  color: #111827;
+  width: 27%;
+  background-color: #f9fafb;
+  line-height: 1.5;
+}
+
+.doc-cross-desc {
+  color: #27272a;
+  line-height: 1.5;
+  text-align: justify;
+}
+
+/* Signature block */
+.doc-signature-block {
+  margin-top: 55px;
+  text-align: center;
+  page-break-inside: avoid;
+  font-family: "Century Gothic", CenturyGothic, AppleGothic, sans-serif;
+}
+
+.doc-signature-line {
+  display: inline-block;
+  width: 290px;
+  border-top: 1.5px solid #4b5563;
+  margin-bottom: 10px;
+}
+
+.doc-signature-name {
+  font-size: 12pt;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 4px;
+}
+
+.doc-signature-role {
+  font-size: 11pt;
+  color: #4b5563;
+}
+
+/* Document Footer */
+.doc-footer-container {
+  margin-top: 45px;
+  border-top: 1px solid #e5e7eb;
+  padding-top: 14px;
+  text-align: center;
+  font-size: 9pt;
+  color: #006837;
+  line-height: 1.5;
+  font-family: "Century Gothic", CenturyGothic, AppleGothic, sans-serif;
+}
+
+/* Print styles for authentic multi-page print */
+@media print {
+  body {
+    background: transparent !important;
+    padding: 0 !important;
+  }
+  .no-print, header, .nav-tabs, .sidebar-ctrl, .app-header {
+    display: none !important;
+  }
+  .document-sheet {
+    box-shadow: none !important;
+    margin: 0 !important;
+    padding: 20mm 20mm 20mm 20mm !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    border-radius: 0 !important;
+  }
+  .page-break-before {
+    page-break-before: always;
+  }
+}
