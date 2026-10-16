@@ -6,6 +6,8 @@
 // Estado global de la aplicación
 const state = {
   // Datos Generales
+  tipoUnidad: "Carrera", // Carrera, Coordinación, Departamento, Área Académica, Dirección, Unidad
+  cargo: "Director(a)",
   institucion: "Universidad Tecnológica de Santiago (UTESA), Sede",
   facultad: "Arquitectura e Ingenierías",
   carrera: "Ingeniería Eléctrica",
@@ -67,9 +69,85 @@ const state = {
   conclusion: ""
 };
 
+/**
+ * Normaliza y devuelve los textos y etiquetas gramaticales según el tipo de unidad
+ * (Carrera, Coordinación, Departamento, Área Académica, Dirección, Unidad)
+ */
+function getUnitInfo() {
+  const tipo = state.tipoUnidad || "Carrera";
+  const rawName = (state.carrera || "").trim();
+  const cargoRaw = (state.cargo || "").trim();
+
+  // Limpiar posibles duplicaciones si el usuario escribió "Departamento de Matemáticas" y seleccionó "Departamento"
+  const cleanName = rawName
+    .replace(/^(carrera de |carrera |coordinación de |coordinacion de |coordinación |coordinacion |departamento de |departamento |área académica de |area academica de |área de |area de |dirección de |direccion de |dirección |direccion |unidad de |unidad )/i, "")
+    .trim();
+
+  const displayName = cleanName || rawName || "Unidad Académica";
+
+  let displayTitle = "";
+  let nounPhrase = "";
+  let defaultCargo = "";
+  let metaLabel = "Carrera / Unidad";
+
+  switch (tipo) {
+    case "Coordinación":
+      displayTitle = `Coordinación de ${displayName}`;
+      nounPhrase = `la Coordinación de ${displayName}`;
+      defaultCargo = "Coordinador(a)";
+      metaLabel = "Coordinación";
+      break;
+    case "Departamento":
+      displayTitle = `Departamento de ${displayName}`;
+      nounPhrase = `el Departamento de ${displayName}`;
+      defaultCargo = "Director(a) de Departamento";
+      metaLabel = "Departamento";
+      break;
+    case "Área Académica":
+      displayTitle = `Área Académica de ${displayName}`;
+      nounPhrase = `el Área Académica de ${displayName}`;
+      defaultCargo = "Coordinador(a) de Área";
+      metaLabel = "Área Académica";
+      break;
+    case "Dirección":
+      displayTitle = `Dirección de ${displayName}`;
+      nounPhrase = `la Dirección de ${displayName}`;
+      defaultCargo = "Director(a)";
+      metaLabel = "Dirección";
+      break;
+    case "Unidad":
+      displayTitle = `Unidad de ${displayName}`;
+      nounPhrase = `la Unidad de ${displayName}`;
+      defaultCargo = "Encargado(a) de Unidad";
+      metaLabel = "Unidad";
+      break;
+    case "Carrera":
+    default:
+      displayTitle = `Carrera de ${displayName}`;
+      nounPhrase = `la carrera de ${displayName}`;
+      defaultCargo = "Director(a)";
+      metaLabel = "Carrera";
+      break;
+  }
+
+  const effectiveCargo = cargoRaw || defaultCargo;
+
+  return {
+    tipo,
+    name: displayName,
+    displayTitle,
+    nounPhrase,
+    cargo: effectiveCargo,
+    metaLabel,
+    siglas: state.siglas ? `(${state.siglas})` : ""
+  };
+}
+
 // Plantillas predeterminadas de ejemplo
 const templates = {
   iel: {
+    tipoUnidad: "Carrera",
+    cargo: "Director(a)",
     carrera: "Ingeniería Eléctrica",
     siglas: "IEL",
     facultad: "Arquitectura e Ingenierías",
@@ -113,6 +191,123 @@ const templates = {
       "Atracción de egresados y docentes por el mercado laboral externo y la emigración de talento.",
       "Dificultades financieras del sector eléctrico, que pueden limitar la inversión y la oferta de prácticas.",
       "Dependencia de la cooperación de empresas y organismos externos para las actividades prácticas."
+    ]
+  },
+
+  coi: {
+    tipoUnidad: "Coordinación",
+    cargo: "Coordinador(a) de Ingeniería",
+    carrera: "Ingeniería",
+    siglas: "COI",
+    facultad: "Arquitectura e Ingenierías",
+    director: "Ing. Roberto Almonte, M.Sc.",
+    institucion: "Universidad Tecnológica de Santiago (UTESA), Sede Santiago",
+    periodo: "Año académico 2026 (enero – octubre)",
+    ano: "2026",
+    fecha: "16 de octubre de 2026",
+    fuentes: "Evidencias del POA 2026, reuniones mensuales de directores de escuelas de ingeniería, informes de uso de talleres comunes y laboratorios compartidos, reportes de retención estudiantil y seguimiento en ISOTools",
+    fortalezas: [
+      "Estructura de articulación transversal que coordina las escuelas de Civil, Eléctrica, Mecánica, Industrial y Sistemas.",
+      "Comité de Proyectos Integradores Interdisciplinarios que fomenta soluciones de ingeniería aplicada a problemas comunitarios e industriales.",
+      "Gestión centralizada y eficiente del calendario de visitas técnicas y conferencias magistrales conjuntas.",
+      "Optimización en la programación horaria y asignación compartida de los laboratorios y talleres de simulación tecnológica.",
+      "Supervisión estandarizada del cumplimiento de los Planes Operativos Anuales (POA) a través de ISOTools."
+    ],
+    debilidades: [
+      "Dificultad periódica en la conciliación de horarios de laboratorios multidisciplinarios en horas de alta demanda.",
+      "Procesos burocráticos internos para la adquisición de repuestos y mantenimiento preventivo de equipos pesados.",
+      "Falta de un sistema informático integrado para el control de inventario de equipos y herramientas entre escuelas afines.",
+      "Sobrecarga administrativa en la coordinación por la gestión simultánea de múltiples programas de ingeniería."
+    ],
+    oportunidades: [
+      "Creciente auge de parques industriales, zonas francas tecnológicas y proyectos de infraestructura en la región del Cibao.",
+      "Alianzas multisectoriales y convenios marco con el Colegio Dominicano de Ingenieros, Arquitectos y Agrimensores (CODIA) y gremios industriales.",
+      "Convocatorias de fondos concursables del MESCyT (FONDOCyT) para proyectos de investigación e innovación tecnológica interdisciplinaria.",
+      "Programas internacionales de movilidad docente y acreditación regional de carreras de ingeniería (GCREAS / ABET)."
+    ],
+    amenazas: [
+      "Oferta competitiva de programas especializados de ingeniería por universidades públicas y privadas de la región.",
+      "Velocidad acelerada de actualización del instrumental tecnológico industrial frente a los presupuestos de reposición institucional.",
+      "Fluctuaciones macroeconómicas que impactan la disponibilidad de plazas de pasantía en el sector de la construcción y manufactura.",
+      "Migración de talentos docentes altamente calificados hacia el ejercicio profesional en el mercado privado internacional."
+    ]
+  },
+
+  mat: {
+    tipoUnidad: "Departamento",
+    cargo: "Director(a) de Departamento",
+    carrera: "Matemáticas",
+    siglas: "MAT",
+    facultad: "Facultad de Ciencias y Humanidades / Ciencias Básicas",
+    director: "Lic. Miguelina Santos, M.Sc.",
+    institucion: "Universidad Tecnológica de Santiago (UTESA), Sede Santiago",
+    periodo: "Año académico 2026 (enero – octubre)",
+    ano: "2026",
+    fecha: "16 de octubre de 2026",
+    fuentes: "Evidencias del POA 2026, estadísticas de rendimiento y aprobación en asignaturas de ciclo básico (Álgebra, Cálculo, Estadística), informes de asesorías y tutorías académicas y encuestas de satisfacción estudiantil",
+    fortalezas: [
+      "Cuerpo docente con amplia experiencia pedagógica y posgrados en enseñanza de las matemáticas y estadística aplicada.",
+      "Programa institucional de tutorías y asesorías académicas permanentes para estudiantes de nuevo ingreso y asignaturas críticas.",
+      "Estandarización de contenidos, programas analíticos y guías de ejercicios para todo el ciclo básico universitario.",
+      "Integración de herramientas de software computacional (GeoGebra, MATLAB, Wolfram) en las asignaturas de cálculo y álgebra lineal.",
+      "Alto compromiso con la nivelación estudiantil y coordinación estrecha con las facultades de Ingenierías y Negocios."
+    ],
+    debilidades: [
+      "Tasas significativas de reprobación y rezago en asignaturas de cálculo inicial por deficiencias formativas del nivel secundario.",
+      "Disponibilidad limitada de aulas y laboratorios equipados con computadoras dedicadas exclusivamente al modelado matemático.",
+      "Baja participación del cuerpo profesoral en publicaciones científicas arbitradas e investigaciones puras o aplicadas.",
+      "Resistencia de algunos docentes tradicionales a la adopción de metodologías activas y evaluación por competencias."
+    ],
+    oportunidades: [
+      "Alta demanda de competencias cuantitativas, ciencia de datos y pensamiento analítico en todas las profesiones modernas.",
+      "Plataformas globales de aprendizaje adaptativo e inteligencia artificial para personalización del estudio de las matemáticas.",
+      "Proyectos conjuntos de investigación aplicada y modelado con escuelas de economía, medicina e ingenierías.",
+      "Fondos de capacitación continua docente y becas de especialización ofrecidas por el MESCyT e INAFOCAM."
+    ],
+    amenazas: [
+      "Profundas brechas de competencias lógico-matemáticas en los egresados del sistema de educación media nacional.",
+      "Desmotivación y ansiedad matemática generalizada entre los estudiantes de primer año que impacta la retención.",
+      "Uso indiscriminado y acrítico de herramientas automáticas de IA generativa para resolver tareas sin razonamiento conceptual.",
+      "Escasez nacional de profesionales graduados en matemáticas puras con vocación docente para relevo generacional."
+    ]
+  },
+
+  fis: {
+    tipoUnidad: "Departamento",
+    cargo: "Director(a) de Departamento",
+    carrera: "Física",
+    siglas: "FIS",
+    facultad: "Facultad de Ciencias y Humanidades / Ciencias Básicas",
+    director: "Fís. Juan Pablo Taveras, M.Sc.",
+    institucion: "Universidad Tecnológica de Santiago (UTESA), Sede Santiago",
+    periodo: "Año académico 2026 (enero – octubre)",
+    ano: "2026",
+    fecha: "16 de octubre de 2026",
+    fuentes: "Evidencias del POA 2026, bitácoras de prácticas en los laboratorios de Física Mecánica, Ondas, Termodinámica y Electromagnetismo, y evaluaciones de seguridad en laboratorio",
+    fortalezas: [
+      "Laboratorios de Física Mecánica, Electromagnetismo y Óptica equipados con módulos experimentales funcionales.",
+      "Manuales de prácticas de laboratorio actualizados y diseñados bajo enfoque de indagación científica y aplicación práctica.",
+      "Personal docente capacitado en física teórica y experimental con dedicación a la orientación práctica del estudiante.",
+      "Cumplimiento riguroso de protocolos de bioseguridad, cuidado del instrumental y normativas de trabajo experimental.",
+      "Articulación curricular directa con los requerimientos formativos de las carreras de ingeniería y ciencias de la salud."
+    ],
+    debilidades: [
+      "Capacidad física limitada de las mesas de laboratorio para atender el alto volumen de estudiantes en cuatrimestres pico.",
+      "Sensores digitales e interfaces de adquisición de datos por computadora (PASCO / Vernier) en cantidad insuficiente.",
+      "Falta de un taller de instrumentación y calibración rápida para reparación inmediata de componentes experimentales.",
+      "Tiempo reducido entre sesiones continuas de laboratorio para el desmontaje y calibración de los experimentos."
+    ],
+    oportunidades: [
+      "Integración de laboratorios virtuales y simulaciones interactivas (PhET Interactive Simulations) como complemento previo al experimento físico.",
+      "Fomento a la investigación en energías alternativas, física médica y nanotecnología en cooperación con facultades aplicadas.",
+      "Acceso a programas de capacitación en didáctica de las ciencias experimentales mediante convenios interinstitucionales.",
+      "Participación en olimpiadas de física y ferias científicas universitarias para despertar vocaciones científicas."
+    ],
+    amenazas: [
+      "Costos elevados de importación y reposición de instrumental de precisión y componentes de vidrio y óptica.",
+      "Carencia de bases conceptuales de razonamiento inductivo y físico en una parte representativa de los alumnos ingresantes.",
+      "Rápido desgaste de equipos electromecánicos por el uso masivo e intensivo diario en múltiples secciones.",
+      "Dificultades en la adquisición oportuna de repuestos originales debido a retrasos en cadenas de suministro."
     ]
   },
 
@@ -234,53 +429,54 @@ const templates = {
  * con redacción formal, ejecutiva e institucional adaptada a los datos de la carrera.
  */
 function generateDocumentContent() {
-  const c = state.carrera;
-  const s = state.siglas ? `(${state.siglas})` : "";
+  const u = getUnitInfo();
+  const c = u.name;
+  const s = u.siglas;
   const y = state.ano || "2026";
   const f = state.facultad || "la Facultad correspondiente";
 
   // 1. Introducción
-  state.introduccion = `El análisis FODA es una herramienta de planificación estratégica que identifica los factores internos de una organización (fortalezas y debilidades) y los factores externos de su entorno (oportunidades y amenazas). Este documento presenta el análisis FODA de la carrera de ${c} ${s} de UTESA para el año académico ${y}, con el propósito de orientar la planificación operativa, la mejora continua del programa y la toma de decisiones de la Dirección de la carrera.`;
+  state.introduccion = `El análisis FODA es una herramienta de planificación estratégica que identifica los factores internos de una organización (fortalezas y debilidades) y los factores externos de su entorno (oportunidades y amenazas). Este documento presenta el análisis FODA de ${u.nounPhrase} ${s} de UTESA para el año académico ${y}, con el propósito de orientar la planificación operativa, la mejora continua de la gestión institucional y la toma de decisiones estratégicas del área.`;
 
   // 2. Metodología
-  const fuentesTexto = state.fuentes ? state.fuentes : "las evidencias de cumplimiento del Plan Operativo Anual (POA), la documentación de actividades académicas e interdisciplinarias, y los informes de la Dirección de carrera";
-  state.metodologia = `El análisis se elaboró a partir de cuatro fuentes: (1) las evidencias de cumplimiento del Plan Operativo Anual ${y} de la carrera; (2) el Calendario de Actividades Interdisciplinarias por Cuatrimestre ${y}; (3) las comunicaciones formales de la Dirección remitidas a la Vicerrectoría Académica sobre la gestión de talleres, laboratorios y recursos docentes; y (4) el marco normativo, curricular y sectorial del país vinculado al ejercicio profesional de ${c}. Los factores internos se derivan de estas evidencias; los externos, de las políticas y tendencias del sector. Se recomienda validar el análisis con el claustro de profesores, los estudiantes y los empleadores.`;
+  const fuentesTexto = state.fuentes ? state.fuentes : `las evidencias de cumplimiento del Plan Operativo Anual (POA), la documentación de actividades académicas e interdisciplinarias, y los informes de gestión de ${u.nounPhrase}`;
+  state.metodologia = `El análisis se elaboró a partir de cuatro fuentes: (1) las evidencias de cumplimiento del Plan Operativo Anual ${y} de ${u.nounPhrase}; (2) el Calendario de Actividades Interdisciplinarias y Operativas ${y}; (3) las comunicaciones formales remitidas a las autoridades académicas sobre la gestión de recursos, talleres, laboratorios y cuerpo docente; y (4) el marco normativo, curricular y sectorial del país vinculado a su ámbito de acción. Los factores internos se derivan de estas evidencias; los externos, de las políticas institucionales y tendencias del sector. Se recomienda validar el análisis con el equipo docente, directivo y las áreas vinculadas.`;
 
   // 4.1 Análisis de Fortalezas
   const fList = state.fortalezas;
   const fSummary = fList.slice(0, 3).map(item => item.replace(/\.$/, '')).join(", ");
-  state.analisisFortalezas = `La principal fortaleza de la carrera en ${y} es la combinación estratégica de actualización curricular, infraestructura orientada a la formación práctica, vinculación activa con la industria e investigación formativa. Se destacan de forma prioritaria: ${fSummary || 'la actualización constante de los planes de estudio y el compromiso del cuerpo profesoral'}. El respaldo institucional de UTESA, con su trayectoria de medio siglo de excelencia y su sistema de gestión articulado al POA, garantiza la continuidad y el fortalecimiento continuo de estas capacidades institucionales.`;
+  state.analisisFortalezas = `La principal fortaleza de ${u.nounPhrase} en ${y} es la combinación estratégica de actualización pedagógica y curricular, optimización de recursos formativos, vinculación activa con la comunidad y el sector productivo, y fortalecimiento de capacidades técnicas. Se destacan de forma prioritaria: ${fSummary || 'la actualización constante de los procesos y el compromiso del cuerpo profesional'}. El respaldo institucional de UTESA, con su trayectoria de medio siglo de excelencia y su sistema de gestión articulado al POA, garantiza la continuidad y el fortalecimiento continuo de estas capacidades institucionales.`;
 
   // 4.2 Análisis de Debilidades
   const dList = state.debilidades;
   const dSummary = dList.slice(0, 3).map(item => item.replace(/\.$/, '')).join("; ");
-  state.analisisDebilidades = `La debilidad más importante radica en la optimización de los espacios especializados y la consolidación de procesos de gestión. Específicamente, se requiere atender: ${dSummary || 'la ampliación de áreas prácticas y la formalización de convenios'}. En el ámbito de la gestión operativa, las evidencias aún requieren un registro más sistemático de participantes y evaluación del impacto de las actividades, evitando la concentración excesiva de tareas en la Dirección y promoviendo la formalización de acuerdos con los sectores externos.`;
+  state.analisisDebilidades = `La debilidad más importante radica en la optimización de los espacios especializados y la consolidación de procesos de gestión operativa. Específicamente, se requiere atender: ${dSummary || 'la ampliación de áreas prácticas y la formalización de procesos internos'}. En el ámbito de la gestión, las evidencias aún requieren un registro más sistemático de participantes y evaluación del impacto de las actividades, evitando la sobrecarga de tareas operativas y promoviendo la formalización de acuerdos interdepartamentales y con sectores externos.`;
 
   // 4.3 Análisis de Oportunidades
   const oList = state.oportunidades;
   const oSummary = oList.slice(0, 3).map(item => item.replace(/\.$/, '')).join("; ");
-  state.analisisOportunidades = `El entorno nacional e internacional es altamente favorable para la carrera de ${c}. La evolución del marco regulatorio, las políticas públicas de modernización sectorial y los fondos de fomento a la investigación abren oportunidades decisivas: ${oSummary || 'la creciente demanda de especialistas y la colaboración con redes académicas'}. Las organizaciones aliadas, empresas del sector productivo y organismos multilaterales ofrecen escenarios idóneos para prácticas de campo, capacitación técnica y divulgación científica.`;
+  state.analisisOportunidades = `El entorno nacional e institucional es altamente favorable para ${u.nounPhrase}. La evolución del marco regulatorio, las políticas de innovación sectorial y los fondos de fomento abren oportunidades decisivas: ${oSummary || 'la creciente demanda de conocimientos especializados y la colaboración interinstitucional'}. Las entidades colaboradoras, empresas del sector productivo y redes académicas ofrecen escenarios idóneos para la articulación práctica, proyectos conjuntos y divulgación de resultados.`;
 
   // 4.4 Análisis de Amenazas
   const aList = state.amenazas;
   const aSummary = aList.slice(0, 3).map(item => item.replace(/\.$/, '')).join("; ");
-  state.analisisAmenazas = `Las amenazas provienen de la intensa competencia académica a nivel regional y nacional, el ritmo acelerado del cambio tecnológico y el costo asociado al equipamiento especializado continuo. En particular, destacan: ${aSummary || 'la competencia de otras instituciones y la rápida evolución del conocimiento técnico'}. Sin una inversión sostenida en laboratorios, recursos tecnológicos y en la retención del talento docente calificado, la carrera podría enfrentar riesgos de pertinencia ante las nuevas demandas del mercado laboral.`;
+  state.analisisAmenazas = `Las amenazas provienen de la intensa competencia académica e institucional a nivel regional y nacional, el ritmo acelerado del cambio tecnológico y el costo asociado al equipamiento especializado continuo. En particular, destacan: ${aSummary || 'la rápida evolución de los estándares del sector y las exigencias de modernización'}. Sin una inversión sostenida en recursos didácticos, plataformas tecnológicas y en la retención del talento humano calificado, el área podría enfrentar riesgos de pertinencia ante las nuevas demandas del entorno.`;
 
   // 5. Estrategias Cruzadas (FO, DO, FA, DA)
   // FO (Fortalezas para aprovechar Oportunidades)
-  state.estrategiasFO = `1. Impulsar líneas de investigación estudiantil y docente vinculadas a las prioridades del sector y postular proyectos conjuntos a los fondos concursables nacionales (MESCyT) y redes internacionales. 2. Posicionar la infraestructura y talleres especializados de la carrera como modelos de referencia institucional y replicar sus buenas prácticas en otros espacios universitarios. 3. Formalizar convenios marco de cooperación, pasantías y capacitación técnica con empresas líderes y parques industriales. 4. Desarrollar ofertas de educación continua, electivas de vanguardia y diplomados especializados acordes a las nuevas regulaciones del país.`;
+  state.estrategiasFO = `1. Impulsar iniciativas conjuntas, docencia aplicada y líneas de investigación vinculadas a las prioridades del entorno y postular proyectos a fondos nacionales (MESCyT) y redes de cooperación. 2. Posicionar la infraestructura y buenas prácticas de ${u.nounPhrase} como modelos de referencia institucional para replicar su éxito en otros espacios universitarios. 3. Formalizar convenios marco de cooperación, pasantías y capacitación técnica con instituciones líderes y gremios profesionales. 4. Desarrollar programas de formación continua y proyectos interdisciplinarios que respondan a las demandas emergentes del país.`;
 
   // DO (Superar Debilidades aprovechando Oportunidades)
-  state.estrategiasDO = `1. Gestionar la habilitación, ampliación y adecuación de nuevos espacios de talleres y laboratorios especializados aprovechando la cooperación y donaciones de la industria. 2. Implementar herramientas digitales de simulación y software especializado de vanguardia para complementar las prácticas técnicas mientras se expande la infraestructura física. 3. Integrar proyectos de estudiantes de asignaturas terminales o integradoras para la puesta en marcha, calibración y aprovechamiento de equipos subutilizados. 4. Buscar acuerdos formales con organismos sectoriales para cofinanciar el equipamiento docente y acelerar la transición del currículo por competencias.`;
+  state.estrategiasDO = `1. Gestionar la habilitación, ampliación y adecuación de nuevos espacios y recursos especializados aprovechando alianzas estratégicas y fondos de cooperación. 2. Implementar herramientas digitales de simulación y plataformas virtuales para complementar las actividades técnicas y formativas. 3. Integrar proyectos multidisciplinarios de estudiantes y docentes para la puesta en marcha, calibración y aprovechamiento óptimo de equipos y espacios de práctica. 4. Establecer mesas de trabajo interdepartamentales para cofinanciar equipamiento docente y agilizar la adopción de metodologías de vanguardia.`;
 
   // FA (Fortalezas para enfrentar Amenazas)
-  state.estrategiasFA = `1. Destacar en las campañas de promoción institucional y captación de estudiantes la alta calidad de los docentes, la vinculación empresarial y la investigación como factores diferenciales clave frente a la competencia. 2. Fomentar el trabajo interdisciplinario y el uso compartido de laboratorios entre carreras afines de ${f} para optimizar recursos. 3. Mantener programas permanentes de actualización docente en conjunto con empresas e instituciones internacionales para contrarrestar la fuga de talento y la obsolescencia técnica.`;
+  state.estrategiasFA = `1. Destacar en la comunicación institucional y en la comunidad universitaria la alta solvencia pedagógica, la vinculación externa y los proyectos de impacto como sellos diferenciales de calidad. 2. Fomentar el trabajo interdisciplinario y el uso compartido de recursos técnicos en ${f} para optimizar costos y maximizar la eficiencia operativa. 3. Promover planes continuos de actualización y desarrollo para el personal docente y técnico con el propósito de mitigar la fuga de talentos y el desfase metodológico.`;
 
   // DA (Reducir Debilidades y evitar Amenazas)
-  state.estrategiasDA = `1. Implementar un protocolo sistemático de registro digital de asistencia, resultados y encuestas de satisfacción en cada actividad para evidenciar el impacto real en el POA. 2. Dar seguimiento prioritario a las solicitudes de infraestructura, climatización y mantenimiento de talleres para garantizar condiciones idóneas de enseñanza. 3. Distribuir la coordinación de iniciativas y comisiones académicas entre profesores responsables por ejes disciplinares. 4. Diversificar las alianzas y convenios con múltiples entidades públicas y privadas para mitigar la dependencia de un único aliado externo.`;
+  state.estrategiasDA = `1. Implementar un protocolo sistemático de registro digital de asistencia, resultados y encuestas de satisfacción en cada actividad para evidenciar el impacto real en el POA. 2. Dar seguimiento prioritario a las solicitudes de infraestructura, mantenimiento y actualización de instalaciones para garantizar condiciones idóneas de trabajo. 3. Distribuir la coordinación de iniciativas y comisiones de trabajo entre responsables por áreas disciplinares. 4. Diversificar los lazos institucionales con múltiples entidades para reducir la dependencia de un único sector colaborador.`;
 
   // 6. Conclusión
-  state.conclusion = `La carrera de ${c} muestra en ${y} una base sólida: un plan de estudios orientado al modelo por competencias, infraestructura formativa en continuo fortalecimiento, vinculación activa con el sector productivo y avances significativos en investigación aplicada y producción académica. Su principal reto consiste en expandir y modernizar sus espacios de práctica especializada, además de sistematizar la documentación del impacto de sus actividades y formalizar jurídicamente sus alianzas externas. El entorno de desarrollo del país ofrece oportunidades claras que la carrera puede capitalizar estratégicamente con las acciones propuestas. Se recomienda validar formalmente este análisis con el claustro docente, los estudiantes y los empleadores, e incorporar estas estrategias como insumo prioritario para el Plan Operativo Anual (POA) ${parseInt(y, 10) + 1 || '2027'} y su correspondiente carga en la plataforma ISOTools.`;
+  state.conclusion = `${u.displayTitle} muestra en ${y} una base institucional sólida: procesos orientados a la calidad, recursos en continuo fortalecimiento, vinculación activa con la comunidad universitaria y el sector productivo, y avances significativos en el cumplimiento de sus objetivos. Su principal reto consiste en expandir y modernizar sus recursos prácticos y tecnológicos, además de sistematizar la documentación de evidencias y formalizar alianzas estratégicas. El contexto actual ofrece oportunidades propicias que el área puede capitalizar de forma planificada. Se recomienda validar formalmente este análisis con el equipo docente, directivo y los sectores afines, e incorporar estas estrategias como insumo prioritario para el Plan Operativo Anual (POA) ${parseInt(y, 10) + 1 || '2027'} y su correspondiente carga en la plataforma ISOTools.`;
 }
 
 // Inicialización de la aplicación
@@ -293,6 +489,12 @@ function initApp() {
 
 // Renderiza los campos del formulario con los valores del estado
 function renderForm() {
+  const selTipo = document.getElementById('selectTipoUnidad');
+  if (selTipo) selTipo.value = state.tipoUnidad || 'Carrera';
+
+  const inpCargo = document.getElementById('inputCargo');
+  if (inpCargo) inpCargo.value = state.cargo || 'Director(a)';
+
   document.getElementById('inputInstitucion').value = state.institucion;
   document.getElementById('inputFacultad').value = state.facultad;
   document.getElementById('inputCarrera').value = state.carrera;
@@ -376,6 +578,8 @@ window.removeFactorItem = function(factorKey, index) {
 window.loadTemplate = function(tplKey) {
   const tpl = templates[tplKey];
   if (!tpl) return;
+  state.tipoUnidad = tpl.tipoUnidad || "Carrera";
+  state.cargo = tpl.cargo || "Director(a)";
   state.institucion = tpl.institucion;
   state.facultad = tpl.facultad;
   state.carrera = tpl.carrera;
@@ -399,13 +603,15 @@ window.loadTemplate = function(tplKey) {
 // Limpia el formulario para empezar de cero
 window.clearForm = function() {
   if (confirm("¿Deseas vaciar el formulario para empezar desde cero?")) {
+    state.tipoUnidad = "Carrera";
+    state.cargo = "Director(a)";
     state.carrera = "";
     state.siglas = "";
     state.director = "";
     state.periodo = "Año académico 2026 (enero – octubre)";
     state.ano = "2026";
     state.fecha = new Date().toLocaleDateString('es-DO', { year: 'numeric', month: 'long', day: 'numeric' });
-    state.fuentes = "Evidencias del Plan Operativo Anual (POA), calendario de actividades y reuniones departamentales";
+    state.fuentes = "Evidencias del Plan Operativo Anual (POA), calendario de actividades y reuniones operativas";
     state.fortalezas = [""];
     state.debilidades = [""];
     state.oportunidades = [""];
@@ -427,6 +633,33 @@ window.regenerateAnalysis = function() {
 
 // Configuración de listeners para actualización reactiva en tiempo real
 function setupEventListeners() {
+  // Listener para tipo de unidad
+  const selTipo = document.getElementById('selectTipoUnidad');
+  if (selTipo) {
+    selTipo.addEventListener('change', (e) => {
+      state.tipoUnidad = e.target.value;
+      const u = getUnitInfo();
+      // Si el cargo era el predeterminado del tipo anterior o está vacío, actualizarlo
+      const inpCargo = document.getElementById('inputCargo');
+      if (inpCargo) {
+        state.cargo = u.cargo;
+        inpCargo.value = u.cargo;
+      }
+      generateDocumentContent();
+      renderForm();
+      renderPreview();
+    });
+  }
+
+  // Listener para cargo
+  const inpCargo = document.getElementById('inputCargo');
+  if (inpCargo) {
+    inpCargo.addEventListener('input', (e) => {
+      state.cargo = e.target.value;
+      renderPreview();
+    });
+  }
+
   const inputs = [
     'inputInstitucion', 'inputFacultad', 'inputCarrera', 'inputSiglas',
     'inputDirector', 'inputPeriodo', 'inputAno', 'inputFecha', 'inputFuentes'
@@ -439,7 +672,14 @@ function setupEventListeners() {
         const key = id.replace('input', '').toLowerCase();
         if (key === 'institucion') state.institucion = e.target.value;
         if (key === 'facultad') state.facultad = e.target.value;
-        if (key === 'carrera') state.carrera = e.target.value;
+        if (key === 'carrera') {
+          state.carrera = e.target.value;
+          // Actualizar dinámicamente si el título cambió
+          generateDocumentContent();
+          document.getElementById('textIntro').value = state.introduccion;
+          document.getElementById('textMetodologia').value = state.metodologia;
+          document.getElementById('textConclusion').value = state.conclusion;
+        }
         if (key === 'siglas') state.siglas = e.target.value;
         if (key === 'director') state.director = e.target.value;
         if (key === 'periodo') state.periodo = e.target.value;
@@ -492,8 +732,9 @@ function renderPreview() {
   const container = document.getElementById('previewDocument');
   if (!container) return;
 
-  const c = state.carrera || "Carrera Académica";
-  const s = state.siglas ? `(${state.siglas})` : "";
+  const u = getUnitInfo();
+  const c = u.name;
+  const s = u.siglas;
   const y = state.ano || "2026";
   const headerImgSrc = window.UTESA_HEADER_BASE64 ? `data:image/png;base64,${window.UTESA_HEADER_BASE64}` : 'utesa_header.png';
 
@@ -530,9 +771,9 @@ function renderPreview() {
     </div>
 
     <!-- Título Principal -->
-    <div class="doc-title-main">Análisis FODA de la Carrera de ${escapeHtml(c)} ${escapeHtml(s)}</div>
+    <div class="doc-title-main">Análisis FODA de ${escapeHtml(u.displayTitle)} ${escapeHtml(s)}</div>
     <div class="doc-subtitle-1">Fortalezas, Oportunidades, Debilidades y Amenazas – ${escapeHtml(y)}</div>
-    <div class="doc-subtitle-2">Carrera de ${escapeHtml(c)} ${escapeHtml(s)} – Universidad Tecnológica de Santiago (UTESA)</div>
+    <div class="doc-subtitle-2">${escapeHtml(u.displayTitle)} ${escapeHtml(s)} – Universidad Tecnológica de Santiago (UTESA)</div>
     <div class="doc-date">Fecha: ${escapeHtml(state.fecha || '')}</div>
 
     <!-- Tabla de Metadatos -->
@@ -543,15 +784,15 @@ function renderPreview() {
           <td>${escapeHtml(state.institucion || '')}</td>
         </tr>
         <tr>
-          <th>Facultad</th>
+          <th>Facultad / División</th>
           <td>${escapeHtml(state.facultad || '')}</td>
         </tr>
         <tr>
-          <th>Carrera</th>
+          <th>${escapeHtml(u.metaLabel)}</th>
           <td>${escapeHtml(c)} ${escapeHtml(s)}</td>
         </tr>
         <tr>
-          <th>Director</th>
+          <th>${escapeHtml(u.cargo)}</th>
           <td>${escapeHtml(state.director || '')}</td>
         </tr>
         <tr>
@@ -661,8 +902,8 @@ function renderPreview() {
     <!-- Espacio Oficial para Firma y Sello (Limpio para impresión) -->
     <div class="doc-signature-block">
       <div class="doc-signature-line"></div>
-      <div class="doc-signature-name">${escapeHtml(state.director || 'Nombre del Director')}</div>
-      <div class="doc-signature-role">Director(a) de la carrera de ${escapeHtml(c)} ${escapeHtml(s)}</div>
+      <div class="doc-signature-name">${escapeHtml(state.director || 'Nombre del Responsable')}</div>
+      <div class="doc-signature-role">${escapeHtml(u.cargo)} – ${escapeHtml(u.displayTitle)} ${escapeHtml(s)}</div>
     </div>
 
     <!-- Pie de Página Institucional -->
@@ -752,16 +993,17 @@ window.downloadWordDocument = async function() {
       right: { style: BorderStyle.NONE }
     };
 
-    const c = state.carrera || "Carrera";
-    const s = state.siglas ? `(${state.siglas})` : "";
+    const u = getUnitInfo();
+    const c = u.name;
+    const s = u.siglas;
     const y = state.ano || "2026";
 
     // 1. Tabla de Metadatos
     const metaRows = [
       ["Institución", state.institucion || ""],
-      ["Facultad", state.facultad || ""],
-      ["Carrera", `${c} ${s}`],
-      ["Director", state.director || ""],
+      ["Facultad / División", state.facultad || ""],
+      [u.metaLabel, `${c} ${s}`],
+      [u.cargo, state.director || ""],
       ["Período analizado", state.periodo || ""],
       ["Fuentes", state.fuentes || ""]
     ].map(([label, val]) => new TableRow({
@@ -1093,7 +1335,7 @@ window.downloadWordDocument = async function() {
             alignment: AlignmentType.CENTER,
             spacing: { before: 120, after: 90 },
             children: [
-              new TextRun({ text: `Análisis FODA de la Carrera de ${c} ${s}`, bold: true, size: 30, font: "Century Gothic", color: "111827" })
+              new TextRun({ text: `Análisis FODA de ${u.displayTitle} ${s}`, bold: true, size: 30, font: "Century Gothic", color: "111827" })
             ]
           }),
           new Paragraph({
@@ -1107,7 +1349,7 @@ window.downloadWordDocument = async function() {
             alignment: AlignmentType.CENTER,
             spacing: { after: 90 },
             children: [
-              new TextRun({ text: `Carrera de ${c} ${s} – Universidad Tecnológica de Santiago (UTESA)`, size: 24, font: "Century Gothic", color: "4B5563" })
+              new TextRun({ text: `${u.displayTitle} ${s} – Universidad Tecnológica de Santiago (UTESA)`, size: 24, font: "Century Gothic", color: "4B5563" })
             ]
           }),
           new Paragraph({
@@ -1152,7 +1394,7 @@ window.downloadWordDocument = async function() {
           makeSecTitle("6. Conclusión"),
           makeP(state.conclusion),
 
-          // Bloque de Firma y Sello (Limpio para que el director firme y selle físicamente)
+          // Bloque de Firma y Sello (Limpio para que el responsable firme y selle físicamente)
           new Paragraph({
             alignment: AlignmentType.CENTER,
             spacing: { before: 800, after: 100 },
@@ -1164,14 +1406,14 @@ window.downloadWordDocument = async function() {
             alignment: AlignmentType.CENTER,
             spacing: { after: 60 },
             children: [
-              new TextRun({ text: state.director || "Nombre del Director", bold: true, size: 24, font: "Century Gothic", color: "111827" })
+              new TextRun({ text: state.director || "Nombre del Responsable", bold: true, size: 24, font: "Century Gothic", color: "111827" })
             ]
           }),
           new Paragraph({
             alignment: AlignmentType.CENTER,
             spacing: { after: 300 },
             children: [
-              new TextRun({ text: `Director(a) de la carrera de ${c} ${s}`, size: 22, font: "Century Gothic", color: "4B5563" })
+              new TextRun({ text: `${u.cargo} – ${u.displayTitle} ${s}`, size: 22, font: "Century Gothic", color: "4B5563" })
             ]
           })
         ]
