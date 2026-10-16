@@ -322,18 +322,30 @@ function renderForm() {
   document.getElementById('textConclusion').value = state.conclusion;
 }
 
-// Renderiza una lista interactiva de viñetas para un cuadrante FODA
+// Renderiza una lista interactiva de viñetas para un cuadrante FODA con identificación visual clara
 function renderFactorList(containerId, list, factorKey) {
   const container = document.getElementById(containerId);
   container.innerHTML = '';
 
+  const meta = {
+    fortalezas: { badge: 'bg-emerald-100 text-emerald-800 border-emerald-300', dot: 'bg-emerald-600', placeholder: 'Describa una fortaleza específica (ej: planes por competencias, talleres...)' },
+    debilidades: { badge: 'bg-rose-100 text-rose-800 border-rose-300', dot: 'bg-rose-600', placeholder: 'Describa una debilidad o necesidad de mejora (ej: espacios de práctica...)' },
+    oportunidades: { badge: 'bg-teal-100 text-teal-800 border-teal-300', dot: 'bg-teal-600', placeholder: 'Describa una oportunidad del entorno (ej: convenios, fondos MESCyT...)' },
+    amenazas: { badge: 'bg-amber-100 text-amber-800 border-amber-300', dot: 'bg-amber-600', placeholder: 'Describa una amenaza externa (ej: competencia de universidades, cambios tecnológicos...)' }
+  };
+
+  const conf = meta[factorKey] || { badge: 'bg-slate-100 text-slate-700 border-slate-300', dot: 'bg-slate-500', placeholder: '' };
+
   list.forEach((item, index) => {
     const itemDiv = document.createElement('div');
-    itemDiv.className = 'flex items-start gap-2 mb-2 group';
+    itemDiv.className = 'flex items-start gap-2 mb-2 group bg-white/80 p-1.5 rounded-lg border border-slate-200 shadow-2xs hover:border-slate-300 transition';
     itemDiv.innerHTML = `
-      <span class="text-xs font-bold px-2 py-1 bg-slate-100 rounded text-slate-500 mt-1 select-none">${index + 1}</span>
-      <textarea class="w-full text-xs p-2 border border-slate-200 rounded focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 transition outline-none resize-y" rows="2" data-factor="${factorKey}" data-index="${index}">${item}</textarea>
-      <button type="button" class="text-slate-400 hover:text-red-600 p-1 rounded transition self-start mt-1" title="Eliminar viñeta" onclick="removeFactorItem('${factorKey}', ${index})">
+      <div class="flex items-center gap-1.5 px-2 py-1 rounded border text-[11px] font-bold select-none shrink-0 mt-0.5 ${conf.badge}" title="Viñeta ${index + 1}">
+        <span class="w-2 h-2 rounded-full ${conf.dot}"></span>
+        <span>• Viñeta ${index + 1}</span>
+      </div>
+      <textarea class="w-full text-xs p-2 border border-slate-200 rounded focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 transition outline-none resize-y" rows="2" placeholder="${conf.placeholder}" data-factor="${factorKey}" data-index="${index}">${item}</textarea>
+      <button type="button" class="text-slate-400 hover:text-red-600 p-1.5 rounded transition self-start mt-0.5 hover:bg-red-50" title="Eliminar viñeta" onclick="removeFactorItem('${factorKey}', ${index})">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
       </button>
     `;
@@ -485,11 +497,30 @@ function renderPreview() {
   const y = state.ano || "2026";
   const headerImgSrc = window.UTESA_HEADER_BASE64 ? `data:image/png;base64,${window.UTESA_HEADER_BASE64}` : 'utesa_header.png';
 
-  // Generación de listas HTML
-  const makeUl = (list) => {
+  // Generación de listas HTML con viñetas institucionales y sangría francesa
+  const makeUl = (list, type = 'pos') => {
     const valid = list.filter(item => item.trim().length > 0);
     if (valid.length === 0) return '<p class="text-xs text-slate-400 italic">Sin elementos registrados</p>';
-    return `<ul class="doc-swot-list">${valid.map(x => `<li>${escapeHtml(x)}</li>`).join('')}</ul>`;
+    const bulletColor = type === 'pos' ? '#1E5E2A' : '#8B2816';
+    return `<ul class="doc-swot-list">${valid.map(x => `
+      <li class="doc-swot-item">
+        <span class="doc-bullet" style="color: ${bulletColor}; font-weight: bold;">•</span>
+        <span class="doc-swot-text">${escapeHtml(x)}</span>
+      </li>
+    `).join('')}</ul>`;
+  };
+
+  // Formateador para separar visualmente cada estrategia numerada (1. 2. 3. 4.)
+  const formatStrategiesHtml = (text) => {
+    if (!text) return '';
+    const items = text.split(/(?=\b\d+\.\s+)/).map(s => s.trim()).filter(s => s.length > 0);
+    if (items.length <= 1) return escapeHtml(text);
+    return items.map(item => `
+      <div class="mb-2.5 last:mb-0 leading-relaxed text-justify flex items-start gap-1.5">
+        <span class="font-bold text-emerald-800 shrink-0 select-none">•</span>
+        <span>${escapeHtml(item)}</span>
+      </div>
+    `).join('');
   };
 
   container.innerHTML = `
@@ -555,11 +586,11 @@ function renderPreview() {
         <tr>
           <td>
             <div class="doc-swot-subhdr-pos">FORTALEZAS (internas)</div>
-            ${makeUl(state.fortalezas)}
+            ${makeUl(state.fortalezas, 'pos')}
           </td>
           <td>
             <div class="doc-swot-subhdr-neg">DEBILIDADES (internas)</div>
-            ${makeUl(state.debilidades)}
+            ${makeUl(state.debilidades, 'neg')}
           </td>
         </tr>
         <tr>
@@ -569,11 +600,11 @@ function renderPreview() {
         <tr>
           <td>
             <div class="doc-swot-subhdr-pos">OPORTUNIDADES (externas)</div>
-            ${makeUl(state.oportunidades)}
+            ${makeUl(state.oportunidades, 'pos')}
           </td>
           <td>
             <div class="doc-swot-subhdr-neg">AMENAZAS (externas)</div>
-            ${makeUl(state.amenazas)}
+            ${makeUl(state.amenazas, 'neg')}
           </td>
         </tr>
       </tbody>
@@ -606,19 +637,19 @@ function renderPreview() {
       <tbody>
         <tr>
           <td class="doc-cross-type">FO (fortalezas para aprovechar oportunidades)</td>
-          <td class="doc-cross-desc">${escapeHtml(state.estrategiasFO || '')}</td>
+          <td class="doc-cross-desc">${formatStrategiesHtml(state.estrategiasFO || '')}</td>
         </tr>
         <tr>
           <td class="doc-cross-type">DO (superar debilidades aprovechando oportunidades)</td>
-          <td class="doc-cross-desc">${escapeHtml(state.estrategiasDO || '')}</td>
+          <td class="doc-cross-desc">${formatStrategiesHtml(state.estrategiasDO || '')}</td>
         </tr>
         <tr>
           <td class="doc-cross-type">FA (fortalezas para enfrentar amenazas)</td>
-          <td class="doc-cross-desc">${escapeHtml(state.estrategiasFA || '')}</td>
+          <td class="doc-cross-desc">${formatStrategiesHtml(state.estrategiasFA || '')}</td>
         </tr>
         <tr>
           <td class="doc-cross-type">DA (reducir debilidades y evitar amenazas)</td>
-          <td class="doc-cross-desc">${escapeHtml(state.estrategiasDA || '')}</td>
+          <td class="doc-cross-desc">${formatStrategiesHtml(state.estrategiasDA || '')}</td>
         </tr>
       </tbody>
     </table>
@@ -763,8 +794,8 @@ window.downloadWordDocument = async function() {
       rows: metaRows
     });
 
-    // Función auxiliar para crear párrafos con viñetas en celdas Word con Century Gothic y 1.5 de interlineado
-    const makeBulletsInCell = (items) => {
+    // Función auxiliar para crear párrafos con viñetas institucionales nítidas en celdas Word
+    const makeBulletsInCell = (items, isPositive = true) => {
       const valid = items.filter(t => t.trim().length > 0);
       if (valid.length === 0) {
         return [new Paragraph({
@@ -773,10 +804,13 @@ window.downloadWordDocument = async function() {
         })];
       }
       return valid.map(item => new Paragraph({
-        bullet: { level: 0 },
+        indent: { left: 300, hanging: 200 },
         alignment: AlignmentType.JUSTIFIED,
-        spacing: { line: 360, lineRule: "auto", before: 60, after: 80 },
-        children: [new TextRun({ text: item, size: 22, font: "Century Gothic", color: "1F2937" })]
+        spacing: { line: 360, lineRule: "auto", before: 60, after: 100 },
+        children: [
+          new TextRun({ text: "•  ", bold: true, color: isPositive ? "1E5E2A" : "8B2816", font: "Century Gothic", size: 22 }),
+          new TextRun({ text: item, size: 22, font: "Century Gothic", color: "1F2937" })
+        ]
       }));
     };
 
@@ -821,7 +855,7 @@ window.downloadWordDocument = async function() {
                   spacing: { after: 120 },
                   children: [new TextRun({ text: "FORTALEZAS (internas)", bold: true, color: "1E5E2A", size: 22, font: "Century Gothic" })]
                 }),
-                ...makeBulletsInCell(state.fortalezas)
+                ...makeBulletsInCell(state.fortalezas, true)
               ]
             }),
             new TableCell({
@@ -833,7 +867,7 @@ window.downloadWordDocument = async function() {
                   spacing: { after: 120 },
                   children: [new TextRun({ text: "DEBILIDADES (internas)", bold: true, color: "8B2816", size: 22, font: "Century Gothic" })]
                 }),
-                ...makeBulletsInCell(state.debilidades)
+                ...makeBulletsInCell(state.debilidades, false)
               ]
             })
           ]
@@ -875,7 +909,7 @@ window.downloadWordDocument = async function() {
                   spacing: { after: 120 },
                   children: [new TextRun({ text: "OPORTUNIDADES (externas)", bold: true, color: "1E5E2A", size: 22, font: "Century Gothic" })]
                 }),
-                ...makeBulletsInCell(state.oportunidades)
+                ...makeBulletsInCell(state.oportunidades, true)
               ]
             }),
             new TableCell({
@@ -887,7 +921,7 @@ window.downloadWordDocument = async function() {
                   spacing: { after: 120 },
                   children: [new TextRun({ text: "AMENAZAS (externas)", bold: true, color: "8B2816", size: 22, font: "Century Gothic" })]
                 }),
-                ...makeBulletsInCell(state.amenazas)
+                ...makeBulletsInCell(state.amenazas, false)
               ]
             })
           ]
@@ -895,7 +929,27 @@ window.downloadWordDocument = async function() {
       ]
     });
 
-    // 3. Tabla de Estrategias Cruzadas
+    // 3. Tabla de Estrategias Cruzadas con párrafos diferenciados
+    const formatStrategiesWord = (stratContent) => {
+      const items = stratContent.split(/(?=\b\d+\.\s+)/).map(s => s.trim()).filter(s => s.length > 0);
+      if (items.length <= 1) {
+        return [new Paragraph({
+          alignment: AlignmentType.JUSTIFIED,
+          spacing: { line: 360, lineRule: "auto" },
+          children: [new TextRun({ text: stratContent, size: 22, font: "Century Gothic", color: "27272A" })]
+        })];
+      }
+      return items.map((item, idx) => new Paragraph({
+        indent: { left: 280, hanging: 180 },
+        alignment: AlignmentType.JUSTIFIED,
+        spacing: { line: 360, lineRule: "auto", before: idx === 0 ? 0 : 50, after: 70 },
+        children: [
+          new TextRun({ text: "•  ", bold: true, color: "1E5E2A", font: "Century Gothic", size: 22 }),
+          new TextRun({ text: item, size: 22, font: "Century Gothic", color: "27272A" })
+        ]
+      }));
+    };
+
     const crossRows = [
       ["FO (fortalezas para aprovechar oportunidades)", state.estrategiasFO || ""],
       ["DO (superar debilidades aprovechando oportunidades)", state.estrategiasDO || ""],
@@ -917,11 +971,7 @@ window.downloadWordDocument = async function() {
           width: { size: 72, type: WidthType.PERCENTAGE },
           borders: subtleBorder,
           margins: { top: 120, bottom: 120, left: 140, right: 140 },
-          children: [new Paragraph({
-            alignment: AlignmentType.JUSTIFIED,
-            spacing: { line: 360, lineRule: "auto" },
-            children: [new TextRun({ text: stratContent, size: 22, font: "Century Gothic", color: "27272A" })]
-          })]
+          children: formatStrategiesWord(stratContent)
         })
       ]
     }));

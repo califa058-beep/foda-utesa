@@ -173,10 +173,10 @@ body {
 
 .doc-swot-table th, .doc-swot-table td {
   border: 1px solid #d1d5db;
-  padding: 10px 14px;
+  padding: 12px 14px;
   vertical-align: top;
   width: 50%;
-  line-height: 1.45;
+  line-height: 1.5;
 }
 
 .doc-swot-th-pos {
@@ -203,28 +203,56 @@ body {
   font-weight: 700;
   color: var(--foda-positive-text);
   font-size: 11.5pt;
-  margin-bottom: 9px;
+  margin-bottom: 12px;
   text-transform: uppercase;
+  border-bottom: 1.5px solid #e8f5e9;
+  padding-bottom: 4px;
 }
 
 .doc-swot-subhdr-neg {
   font-weight: 700;
   color: var(--foda-negative-text);
   font-size: 11.5pt;
-  margin-bottom: 9px;
+  margin-bottom: 12px;
   text-transform: uppercase;
+  border-bottom: 1.5px solid #ffebee;
+  padding-bottom: 4px;
 }
 
+/* Listas con viñetas institucionales estándar (hanging indent) */
 .doc-swot-list {
   margin: 0;
-  padding-left: 20px;
+  padding: 0;
+  list-style: none !important;
 }
 
-.doc-swot-list li {
-  margin-bottom: 8px;
+.doc-swot-item {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 10px;
   line-height: 1.5;
-  color: #1f2937;
   text-align: justify;
+}
+
+.doc-bullet {
+  flex-shrink: 0;
+  width: 16px;
+  font-size: 13pt;
+  line-height: 1.35;
+  user-select: none;
+}
+
+.doc-bullet-pos {
+  color: var(--foda-positive-text);
+}
+
+.doc-bullet-neg {
+  color: var(--foda-negative-text);
+}
+
+.doc-swot-text {
+  flex: 1;
+  color: #1f2937;
 }
 
 /* Cross SWOT Table */
