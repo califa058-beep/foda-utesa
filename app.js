@@ -385,43 +385,132 @@ const templates = {
     ]
   },
 
-  adm: {
-    carrera: "Administración de Empresas",
-    siglas: "ADM",
-    facultad: "Ciencias Económicas y Sociales",
-    director: "Licda. Patricia Almonte, M.B.A.",
+  // Ejemplo para ÁREA ACADÉMICA
+  area: {
+    tipoUnidad: "Área Académica",
+    cargo: "Coordinador(a) de Área",
+    carrera: "Ciencias Básicas y Experimentales",
+    siglas: "CBE",
+    facultad: "Facultad de Ciencias y Humanidades / Arquitectura e Ingenierías",
+    director: "Fís. Juan Pablo Taveras, M.Sc.",
     institucion: "Universidad Tecnológica de Santiago (UTESA), Sede Santiago",
     periodo: "Año académico 2026 (enero – octubre)",
     ano: "2026",
     fecha: "16 de octubre de 2026",
-    fuentes: "Evidencias del POA 2026, encuestas a empleadores y egresados, plan de estudios por competencias y estadísticas de inserción laboral",
+    fuentes: "Evidencias del POA 2026, bitácoras de prácticas en los laboratorios de Física, Química y Biología, y evaluaciones de seguridad en laboratorio",
     fortalezas: [
-      "Enfoque curricular orientado al emprendimiento, transformación digital e innovación empresarial.",
-      "Cuerpo profesoral con sólida experiencia gerencial en los sectores comercial, bancario e industrial.",
-      "Centro de Incubación y Aceleración Empresarial para asesorar iniciativas de negocios estudiantiles.",
-      "Alianzas estratégicas con asociaciones comerciales e industriales locales para visitas y conferencias ejecutivas.",
-      "Amplia red de egresados en posiciones de liderazgo directivo a nivel regional y nacional."
+      "Laboratorios de Física Mecánica, Electromagnetismo y Química Básica equipados con módulos experimentales funcionales.",
+      "Manuales de prácticas de laboratorio actualizados y diseñados bajo enfoque de indagación científica y aplicación práctica.",
+      "Personal docente altamente capacitado con dedicación a la orientación experimental del estudiante.",
+      "Cumplimiento riguroso de protocolos de bioseguridad, cuidado del instrumental y normativas de trabajo experimental.",
+      "Articulación curricular directa con los requerimientos formativos de las carreras de ingeniería y ciencias de la salud."
     ],
     debilidades: [
-      "Uso limitado de simuladores de gestión de negocios (Business Games) y software ERP en asignaturas intermedias.",
-      "Baja formalización de convenios de pasantías con empresas medianas de sectores no tradicionales.",
-      "Evaluación no estandarizada del impacto de los planes de negocios generados por los estudiantes.",
-      "Coordinación de actividades extracurriculares dependiente de un número reducido de docentes líderes."
+      "Capacidad física limitada de las mesas de laboratorio para atender el alto volumen de estudiantes en cuatrimestres pico.",
+      "Sensores digitales e interfaces de adquisición de datos por computadora (PASCO / Vernier) en cantidad insuficiente.",
+      "Falta de un taller de instrumentación y calibración rápida para reparación inmediata de componentes experimentales.",
+      "Tiempo reducido entre sesiones continuas de laboratorio para el desmontaje y calibración de los experimentos."
     ],
     oportunidades: [
-      "Auge del comercio electrónico, finanzas digitales (fintech) y gestión sostenible (criterios ESG) en la República Dominicana.",
-      "Programas gubernamentales de financiamiento y fomento a MIPYMES impulsados por el Ministerio de Industria y Comercio.",
-      "Redes universitarias internacionales para intercambios virtuales de estudiantes y docentes.",
-      "Demanda de profesionales con competencias en analítica de negocios y toma de decisiones basada en datos."
+      "Integración de laboratorios virtuales y simulaciones interactivas (PhET Interactive Simulations) como complemento previo al experimento físico.",
+      "Fomento a la investigación en energías alternativas, física médica y nanotecnología en cooperación con facultades aplicadas.",
+      "Acceso a programas de capacitación en didáctica de las ciencias experimentales mediante convenios interinstitucionales.",
+      "Participación en olimpiadas científicas y ferias universitarias para despertar vocaciones tempranas."
     ],
     amenazas: [
-      "Proliferación de programas de administración semipresenciales y virtuales con costos reducidos en otras instituciones.",
-      "Exigencia empresarial acelerada de habilidades híbridas (tecnología + finanzas) no cubiertas en materias tradicionales.",
-      "Incertidumbre macroeconómica y fluctuaciones en el sector empresarial que pueden reducir las contrataciones de practicantes.",
-      "Rápida desactualización de modelos de negocios tradicionales ante la automatización."
+      "Costos elevados de importación y reposición de instrumental de precisión y componentes de vidrio y óptica.",
+      "Carencia de bases conceptuales de razonamiento inductivo y físico en una parte representativa de los alumnos ingresantes.",
+      "Rápido desgaste de equipos electromecánicos por el uso masivo e intensivo diario en múltiples secciones.",
+      "Dificultades en la adquisición oportuna de repuestos originales debido a retrasos en cadenas de suministro."
+    ]
+  },
+
+  // Ejemplo para DIRECCIÓN ACADÉMICA / ADMINISTRATIVA
+  direccion: {
+    tipoUnidad: "Dirección",
+    cargo: "Director(a) de Bienestar y Servicios Estudiantiles",
+    carrera: "Bienestar y Servicios Estudiantiles",
+    siglas: "DBE",
+    facultad: "Vicerrectoría Académica / Rectoría",
+    director: "Licda. Carmen Luisa Ortega, M.A.",
+    institucion: "Universidad Tecnológica de Santiago (UTESA), Sede Santiago",
+    periodo: "Año académico 2026 (enero – octubre)",
+    ano: "2026",
+    fecha: "16 de octubre de 2026",
+    fuentes: "Evidencias del POA 2026, estadísticas de atención psicológica, médica y de orientación vocacional, reportes de actividades deportivas y culturales e indicadores de satisfacción",
+    fortalezas: [
+      "Programas activos de acompañamiento psicopedagógico, orientación vocacional y apoyo emocional integral al estudiante.",
+      "Oferta diversificada de actividades extracurriculares: grupos artísticos, selecciones deportivas y voluntariado social.",
+      "Canales de comunicación directa y accesible con la comunidad estudiantil a través de plataformas institucionales.",
+      "Equipo profesional multidisciplinario comprometido con la inclusión, la convivencia universitaria y los valores institucionales.",
+      "Articulación constante con las direcciones de carrera para la detección temprana y prevención del abandono estudiantil."
+    ],
+    debilidades: [
+      "Espacios físicos e instalaciones recreativas y deportivas que requieren ampliación para atender a la creciente población estudiantil.",
+      "Plataforma digital de citas y seguimiento psicopedagógico con oportunidades de automatización e integración con el portal del estudiante.",
+      "Cobertura limitada de programas de salud preventiva durante las jornadas nocturnas y fines de semana.",
+      "Personal especializado insuficiente en proporción a la matrícula total para atención personalizada inmediata."
+    ],
+    oportunidades: [
+      "Alianzas interinstitucionales con el Ministerio de la Juventud, Ministerio de Deportes y organismos de salud comunitaria.",
+      "Campañas digitales de salud mental universitaria, bienestar integral y estilos de vida saludables.",
+      "Fondos de patrocinio de empresas privadas para becas deportivas, culturales y equipamiento de áreas comunes.",
+      "Programas de liderazgo juvenil y voluntariado vinculados a los Objetivos de Desarrollo Sostenible (ODS)."
+    ],
+    amenazas: [
+      "Incremento de problemas de salud mental, estrés y ansiedad postpandemia en la población universitaria juvenil.",
+      "Limitaciones presupuestarias para la remodelación y mantenimiento de grandes instalaciones deportivas.",
+      "Factores socioeconómicos externos que inciden en la deserción escolar antes de recibir orientación universitaria.",
+      "Baja participación en actividades presenciales extracurriculares de estudiantes con jornadas laborales extensas."
+    ]
+  },
+
+  // Ejemplo para UNIDAD TÉCNICA O DE APOYO
+  unidad: {
+    tipoUnidad: "Unidad",
+    cargo: "Encargado(a) de Unidad",
+    carrera: "Tecnología Educativa y Recursos Virtuales",
+    siglas: "UTEV",
+    facultad: "Vicerrectoría Académica / Dirección de Tecnología",
+    director: "Ing. Marcos Peña, M.Ed.",
+    institucion: "Universidad Tecnológica de Santiago (UTESA), Sede Santiago",
+    periodo: "Año académico 2026 (enero – octubre)",
+    ano: "2026",
+    fecha: "16 de octubre de 2026",
+    fuentes: "Evidencias del POA 2026, métricas de disponibilidad y uso del Campus Virtual, reportes de tickets de soporte técnico a docentes y alumnos, e inventario tecnológico",
+    fortalezas: [
+      "Plataforma de Campus Virtual estable con alta disponibilidad (99.8%) y soporte multi-dispositivo.",
+      "Programa permanente de capacitación docente en herramientas tecno-pedagógicas e inteligencia artificial aplicada a la enseñanza.",
+      "Mesa de ayuda y soporte técnico ágil para la resolución de incidencias en aulas virtuales y plataformas de evaluación.",
+      "Diseño de recursos multimedia estandarizados para asignaturas semipresenciales y virtuales.",
+      "Coordinación estrecha con la Dirección de Currículo para la mediación pedagógica digital."
+    ],
+    debilidades: [
+      "Tiempos de respuesta lentos en soporte técnico durante las primeras semanas de inicio de cuatrimestre por alta concurrencia.",
+      "Brecha en las competencias digitales avanzadas de un porcentaje de docentes de larga trayectoria.",
+      "Falta de estudios de analítica de datos del aprendizaje (Learning Analytics) para predecir rendimiento académico.",
+      "Limitación en licencias de software educativo especializado para asignaturas de posgrado."
+    ],
+    oportunidades: [
+      "Estrategia de transformación digital educativa e incorporación institucional de modelos de IA generativa para el aprendizaje.",
+      "Convenios con proveedores mundiales de tecnología educativa (Google for Education, Microsoft Edu) para almacenamiento y herramientas en la nube.",
+      "Demanda en aumento de programas de educación a distancia, micro-credenciales y diplomados virtuales para el mercado nacional e internacional.",
+      "Fondos de cooperación para modernización de aulas híbridas y laboratorios multimedia."
+    ],
+    amenazas: [
+      "Riesgos de ciberseguridad, ataques de denegación de servicio (DDoS) o filtración de datos que amenacen la continuidad del servicio.",
+      "Dependencia de proveedores externos de conectividad y servidores en la nube con tarifas sujetas a variaciones cambiarias.",
+      "Resistencia cultural al cambio metodológico en docentes renuentes a la virtualidad.",
+      "Rápida obsolescencia de plataformas de software educativo frente a las innovaciones del mercado."
     ]
   }
 };
+
+// Aliases para que tanto las claves por área como las anteriores funcionen transparentemente
+templates.carrera = templates.iel;
+templates.coordinacion = templates.coi;
+templates.departamento = templates.mat;
+templates.fis = templates.area;
 
 /**
  * Motor de Generación Inteligente

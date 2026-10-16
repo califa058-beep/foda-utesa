@@ -81,32 +81,38 @@
     </div>
 
     <!-- Barra de Plantillas Rápidas -->
-    <div class="bg-slate-50 border-t border-slate-200 px-4 sm:px-6 lg:px-8 py-2 flex items-center justify-between text-xs text-slate-600 flex-wrap gap-2">
+    <div class="bg-slate-50 border-t border-slate-200 px-4 sm:px-6 lg:px-8 py-2.5 flex items-center justify-between text-xs text-slate-600 flex-wrap gap-2">
       <div class="flex items-center gap-2 flex-wrap">
-        <span class="font-semibold text-slate-700">Plantillas de ejemplo:</span>
-        <button type="button" onclick="loadTemplate('iel')" class="px-2.5 py-1 rounded-md bg-white border border-slate-200 hover:border-utesa-green hover:text-utesa-green transition font-medium text-slate-700 shadow-2xs">
-          ⚡ Ing. Eléctrica (Carrera)
+        <span class="font-bold text-slate-800 flex items-center gap-1.5">
+          <svg class="w-4 h-4 text-utesa-green" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+          Ejemplos por Área:
+        </span>
+        <button type="button" onclick="loadTemplate('carrera')" class="px-2.5 py-1 rounded-md bg-white border border-slate-300 hover:border-emerald-600 hover:text-emerald-700 transition font-semibold text-slate-700 shadow-2xs flex items-center gap-1.5" title="Cargar plantilla de ejemplo para Carreras (Ing. Eléctrica)">
+          <span class="w-2 h-2 rounded-full bg-emerald-600"></span>
+          🎓 Carrera
         </button>
-        <button type="button" onclick="loadTemplate('coi')" class="px-2.5 py-1 rounded-md bg-white border border-slate-200 hover:border-utesa-green hover:text-utesa-green transition font-medium text-slate-700 shadow-2xs">
-          📐 Coordinación de Ingeniería
+        <button type="button" onclick="loadTemplate('coordinacion')" class="px-2.5 py-1 rounded-md bg-white border border-slate-300 hover:border-purple-600 hover:text-purple-700 transition font-semibold text-slate-700 shadow-2xs flex items-center gap-1.5" title="Cargar plantilla de ejemplo para Coordinaciones (Coordinación de Ingeniería)">
+          <span class="w-2 h-2 rounded-full bg-purple-600"></span>
+          📐 Coordinación
         </button>
-        <button type="button" onclick="loadTemplate('mat')" class="px-2.5 py-1 rounded-md bg-white border border-slate-200 hover:border-utesa-green hover:text-utesa-green transition font-medium text-slate-700 shadow-2xs">
-          🧮 Dpto. de Matemáticas
+        <button type="button" onclick="loadTemplate('departamento')" class="px-2.5 py-1 rounded-md bg-white border border-slate-300 hover:border-blue-600 hover:text-blue-700 transition font-semibold text-slate-700 shadow-2xs flex items-center gap-1.5" title="Cargar plantilla de ejemplo para Departamentos (Departamento de Matemáticas)">
+          <span class="w-2 h-2 rounded-full bg-blue-600"></span>
+          🧮 Departamento
         </button>
-        <button type="button" onclick="loadTemplate('fis')" class="px-2.5 py-1 rounded-md bg-white border border-slate-200 hover:border-utesa-green hover:text-utesa-green transition font-medium text-slate-700 shadow-2xs">
-          🔬 Dpto. de Física
+        <button type="button" onclick="loadTemplate('area')" class="px-2.5 py-1 rounded-md bg-white border border-slate-300 hover:border-teal-600 hover:text-teal-700 transition font-semibold text-slate-700 shadow-2xs flex items-center gap-1.5" title="Cargar plantilla de ejemplo para Áreas Académicas (Área de Ciencias Básicas / Física)">
+          <span class="w-2 h-2 rounded-full bg-teal-600"></span>
+          🔬 Área Académica
         </button>
-        <button type="button" onclick="loadTemplate('isc')" class="px-2.5 py-1 rounded-md bg-white border border-slate-200 hover:border-utesa-green hover:text-utesa-green transition font-medium text-slate-700 shadow-2xs">
-          💻 Ing. Sistemas (ISC)
+        <button type="button" onclick="loadTemplate('direccion')" class="px-2.5 py-1 rounded-md bg-white border border-slate-300 hover:border-amber-600 hover:text-amber-700 transition font-semibold text-slate-700 shadow-2xs flex items-center gap-1.5" title="Cargar plantilla de ejemplo para Direcciones Académicas / Administrativas">
+          <span class="w-2 h-2 rounded-full bg-amber-600"></span>
+          🏛️ Dirección
         </button>
-        <button type="button" onclick="loadTemplate('med')" class="px-2.5 py-1 rounded-md bg-white border border-slate-200 hover:border-utesa-green hover:text-utesa-green transition font-medium text-slate-700 shadow-2xs">
-          🩺 Medicina (MED)
-        </button>
-        <button type="button" onclick="loadTemplate('adm')" class="px-2.5 py-1 rounded-md bg-white border border-slate-200 hover:border-utesa-green hover:text-utesa-green transition font-medium text-slate-700 shadow-2xs">
-          📊 Adm. Empresas (ADM)
+        <button type="button" onclick="loadTemplate('unidad')" class="px-2.5 py-1 rounded-md bg-white border border-slate-300 hover:border-indigo-600 hover:text-indigo-700 transition font-semibold text-slate-700 shadow-2xs flex items-center gap-1.5" title="Cargar plantilla de ejemplo para Unidades Técnicas o Laboratorios">
+          <span class="w-2 h-2 rounded-full bg-indigo-600"></span>
+          ⚙️ Unidad Técnica
         </button>
       </div>
-      <button type="button" onclick="clearForm()" class="text-rose-600 hover:text-rose-800 font-medium transition flex items-center gap-1">
+      <button type="button" onclick="clearForm()" class="text-rose-600 hover:text-rose-800 font-semibold transition flex items-center gap-1 text-xs">
         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
         Limpiar formulario
       </button>
