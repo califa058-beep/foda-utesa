@@ -481,10 +481,12 @@ function generateDocumentContent() {
 
 // Inicialización de la aplicación
 function initApp() {
+  initSavedRepository();
   generateDocumentContent();
   renderForm();
   renderPreview();
   setupEventListeners();
+  updateSavedBadgeCount();
 }
 
 // Renderiza los campos del formulario con los valores del estado
@@ -1444,6 +1446,434 @@ window.downloadWordDocument = async function() {
 // Imprime directamente o guarda como PDF nativo
 window.printDocument = function() {
   window.print();
+};
+
+/**
+ * =====================================================================
+ * GESTOR DE PERSISTENCIA Y ACTUALIZACIÓN DE ANÁLISIS FODA POR CARRERA
+ * =====================================================================
+ * Permite guardar cada FODA en localStorage para que los directores y
+ * coordinadores puedan volver a entrar, consultar su historial, actualizarlo,
+ * duplicarlo para un nuevo cuatrimestre/año, o exportar un respaldo.
+ */
+
+const STORAGE_KEY = 'UTESA_FODA_REGISTRY_V1';
+
+// Inicializa el repositorio si está vacío precargando los modelos oficiales
+function initSavedRepository() {
+  try {
+    const existing = localStorage.getItem(STORAGE_KEY);
+    if (!existing) {
+      // Sembrar con ejemplos de referencia precargados
+      const initialRegistry = [
+        {
+          id: 'iel-2026',
+          title: 'Carrera de Ingeniería Eléctrica',
+          carrera: 'Ingeniería Eléctrica',
+          siglas: 'IEL',
+          tipoUnidad: 'Carrera',
+          cargo: 'Director(a)',
+          director: 'Dr. Arcadio Rodríguez',
+          facultad: 'Arquitectura e Ingenierías',
+          institucion: 'Universidad Tecnológica de Santiago (UTESA), Sede',
+          periodo: 'Año académico 2026 (enero – octubre)',
+          ano: '2026',
+          fecha: '13 de octubre de 2026',
+          fuentes: 'Evidencias del POA 2026, Calendario de Actividades Interdisciplinarias 2026, comunicación a la Vicerrectoría Académica sobre los talleres C-107 y C-208 (21 de julio de 2026), información de la Dirección y marco normativo y sectorial del país',
+          fortalezas: [...templates.iel.fortalezas],
+          debilidades: [...templates.iel.debilidades],
+          oportunidades: [...templates.iel.oportunidades],
+          amenazas: [...templates.iel.amenazas],
+          updatedAt: new Date().toISOString()
+        },
+        {
+          id: 'coi-2026',
+          title: 'Coordinación de Ingeniería',
+          carrera: 'Ingeniería',
+          siglas: 'COI',
+          tipoUnidad: 'Coordinación',
+          cargo: 'Coordinador(a) de Ingeniería',
+          director: 'Ing. Roberto Almonte, M.Sc.',
+          facultad: 'Arquitectura e Ingenierías',
+          institucion: 'Universidad Tecnológica de Santiago (UTESA), Sede Santiago',
+          periodo: 'Año académico 2026 (enero – octubre)',
+          ano: '2026',
+          fecha: '16 de octubre de 2026',
+          fuentes: 'Evidencias del POA 2026, reuniones mensuales de directores de escuelas de ingeniería, informes de uso de talleres comunes y laboratorios compartidos, reportes de retención estudiantil y seguimiento en ISOTools',
+          fortalezas: [...templates.coi.fortalezas],
+          debilidades: [...templates.coi.debilidades],
+          oportunidades: [...templates.coi.oportunidades],
+          amenazas: [...templates.coi.amenazas],
+          updatedAt: new Date().toISOString()
+        },
+        {
+          id: 'mat-2026',
+          title: 'Departamento de Matemáticas',
+          carrera: 'Matemáticas',
+          siglas: 'MAT',
+          tipoUnidad: 'Departamento',
+          cargo: 'Director(a) de Departamento',
+          director: 'Lic. Miguelina Santos, M.Sc.',
+          facultad: 'Facultad de Ciencias y Humanidades / Ciencias Básicas',
+          institucion: 'Universidad Tecnológica de Santiago (UTESA), Sede Santiago',
+          periodo: 'Año académico 2026 (enero – octubre)',
+          ano: '2026',
+          fecha: '16 de octubre de 2026',
+          fuentes: 'Evidencias del POA 2026, estadísticas de rendimiento y aprobación en asignaturas de ciclo básico (Álgebra, Cálculo, Estadística), informes de asesorías y tutorías académicas y encuestas de satisfacción estudiantil',
+          fortalezas: [...templates.mat.fortalezas],
+          debilidades: [...templates.mat.debilidades],
+          oportunidades: [...templates.mat.oportunidades],
+          amenazas: [...templates.mat.amenazas],
+          updatedAt: new Date().toISOString()
+        }
+      ];
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(initialRegistry));
+    }
+  } catch (err) {
+    console.warn("No se pudo acceder a localStorage:", err);
+  }
+}
+
+// Obtiene todos los FODA guardados
+function getAllSavedFodas() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch (err) {
+    console.error("Error al leer FODAs guardados:", err);
+    return [];
+  }
+}
+
+// Guarda la lista completa
+function saveAllFodas(list) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+    updateSavedBadgeCount();
+  } catch (err) {
+    console.error("Error al persistir FODAs:", err);
+    alert("No se pudo guardar en el navegador. Es posible que el almacenamiento esté lleno o en modo incógnito estricto.");
+  }
+}
+
+// Actualiza el contador numérico de la pestaña
+function updateSavedBadgeCount() {
+  const badge = document.getElementById('badgeSavedCount');
+  if (!badge) return;
+  const list = getAllSavedFodas();
+  if (list.length > 0) {
+    badge.textContent = list.length;
+    badge.classList.remove('hidden');
+  } else {
+    badge.classList.add('hidden');
+  }
+}
+
+/**
+ * Guarda o actualiza el FODA que está en pantalla actualmente
+ */
+window.saveCurrentFoda = function() {
+  const u = getUnitInfo();
+  const rawName = (state.carrera || "").trim();
+
+  if (!rawName) {
+    alert("Por favor indica el Nombre de la Carrera, Coordinación o Departamento antes de guardar.");
+    switchTab('form');
+    document.getElementById('inputCarrera').focus();
+    return;
+  }
+
+  const list = getAllSavedFodas();
+  
+  // Clave canónica por unidad y año (ej: "iel-2026" o "ingenieria-electrica-2026")
+  const slug = (state.siglas || rawName)
+    .toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]/g, "-")
+    .replace(/-+/g, "-");
+  
+  const yearSlug = (state.ano || '2026').trim();
+  const computedId = `${slug}-${yearSlug}`;
+
+  // Buscar si ya existe este registro para sobrescribirlo o actualizarlo
+  const existingIndex = list.findIndex(item => item.id === computedId || (item.siglas && state.siglas && item.siglas.toLowerCase() === state.siglas.toLowerCase() && item.ano === state.ano));
+
+  const fodaRecord = {
+    id: existingIndex >= 0 ? list[existingIndex].id : computedId,
+    title: `${u.displayTitle} ${u.siglas}`,
+    carrera: state.carrera,
+    siglas: state.siglas,
+    tipoUnidad: state.tipoUnidad,
+    cargo: state.cargo,
+    director: state.director,
+    facultad: state.facultad,
+    institucion: state.institucion,
+    periodo: state.periodo,
+    ano: state.ano,
+    fecha: state.fecha,
+    fuentes: state.fuentes,
+    fortalezas: [...state.fortalezas],
+    debilidades: [...state.debilidades],
+    oportunidades: [...state.oportunidades],
+    amenazas: [...state.amenazas],
+    introduccion: state.introduccion,
+    metodologia: state.metodologia,
+    analisisFortalezas: state.analisisFortalezas,
+    analisisDebilidades: state.analisisDebilidades,
+    analisisOportunidades: state.analisisOportunidades,
+    analisisAmenazas: state.analisisAmenazas,
+    estrategiasFO: state.estrategiasFO,
+    estrategiasDO: state.estrategiasDO,
+    estrategiasFA: state.estrategiasFA,
+    estrategiasDA: state.estrategiasDA,
+    conclusion: state.conclusion,
+    updatedAt: new Date().toISOString()
+  };
+
+  if (existingIndex >= 0) {
+    list[existingIndex] = fodaRecord;
+    saveAllFodas(list);
+    showToast(`¡Actualizado con éxito: ${fodaRecord.title}!`);
+  } else {
+    list.unshift(fodaRecord);
+    saveAllFodas(list);
+    showToast(`¡FODA guardado con éxito: ${fodaRecord.title}!`);
+  }
+
+  renderSavedFodaList();
+};
+
+/**
+ * Carga un FODA previamente guardado en el formulario y la vista previa
+ */
+window.loadSavedFoda = function(id) {
+  const list = getAllSavedFodas();
+  const record = list.find(item => item.id === id);
+  if (!record) {
+    alert("No se encontró el registro seleccionado.");
+    return;
+  }
+
+  state.tipoUnidad = record.tipoUnidad || "Carrera";
+  state.cargo = record.cargo || "Director(a)";
+  state.institucion = record.institucion || "";
+  state.facultad = record.facultad || "";
+  state.carrera = record.carrera || "";
+  state.siglas = record.siglas || "";
+  state.director = record.director || "";
+  state.periodo = record.periodo || "";
+  state.ano = record.ano || "2026";
+  state.fecha = record.fecha || "";
+  state.fuentes = record.fuentes || "";
+
+  state.fortalezas = Array.isArray(record.fortalezas) ? [...record.fortalezas] : [""];
+  state.debilidades = Array.isArray(record.debilidades) ? [...record.debilidades] : [""];
+  state.oportunidades = Array.isArray(record.oportunidades) ? [...record.oportunidades] : [""];
+  state.amenazas = Array.isArray(record.amenazas) ? [...record.amenazas] : [""];
+
+  // Si tenía textos redactados guardados, preservarlos; de lo contrario generarlos
+  if (record.introduccion) state.introduccion = record.introduccion;
+  if (record.metodologia) state.metodologia = record.metodologia;
+  if (record.analisisFortalezas) state.analisisFortalezas = record.analisisFortalezas;
+  if (record.analisisDebilidades) state.analisisDebilidades = record.analisisDebilidades;
+  if (record.analisisOportunidades) state.analisisOportunidades = record.analisisOportunidades;
+  if (record.analisisAmenazas) state.analisisAmenazas = record.analisisAmenazas;
+  if (record.estrategiasFO) state.estrategiasFO = record.estrategiasFO;
+  if (record.estrategiasDO) state.estrategiasDO = record.estrategiasDO;
+  if (record.estrategiasFA) state.estrategiasFA = record.estrategiasFA;
+  if (record.estrategiasDA) state.estrategiasDA = record.estrategiasDA;
+  if (record.conclusion) state.conclusion = record.conclusion;
+
+  if (!record.introduccion || !record.conclusion) {
+    generateDocumentContent();
+  }
+
+  renderForm();
+  renderPreview();
+  switchTab('form');
+  showToast(`Cargado: "${record.title || record.carrera}". Puedes editarlo y volver a guardar.`);
+};
+
+/**
+ * Elimina un registro guardado
+ */
+window.deleteSavedFoda = function(id, name) {
+  if (confirm(`¿Estás seguro de eliminar el registro de "${name}"? Esta acción no se puede deshacer.`)) {
+    let list = getAllSavedFodas();
+    list = list.filter(item => item.id !== id);
+    saveAllFodas(list);
+    renderSavedFodaList();
+    showToast(`Registro eliminado.`);
+  }
+};
+
+/**
+ * Duplica un registro existente (útil para iniciar el FODA de un nuevo año o periodo)
+ */
+window.duplicateSavedFoda = function(id) {
+  const list = getAllSavedFodas();
+  const record = list.find(item => item.id === id);
+  if (!record) return;
+
+  const currentYear = parseInt(record.ano, 10) || 2026;
+  const newYear = (currentYear + 1).toString();
+  const newId = `${record.id}-copia-${Date.now().toString().slice(-4)}`;
+
+  const copy = {
+    ...record,
+    id: newId,
+    title: `${record.title} (Copia ${newYear})`,
+    ano: newYear,
+    periodo: `Año académico ${newYear} (enero – octubre)`,
+    fecha: new Date().toLocaleDateString('es-DO', { year: 'numeric', month: 'long', day: 'numeric' }),
+    updatedAt: new Date().toISOString()
+  };
+
+  list.unshift(copy);
+  saveAllFodas(list);
+  renderSavedFodaList();
+  showToast(`Copia creada para el año ${newYear}.`);
+};
+
+/**
+ * Renderiza la lista de registros guardados en la pestaña "Mis FODA Guardados"
+ */
+window.renderSavedFodaList = function() {
+  const container = document.getElementById('savedFodaListContainer');
+  if (!container) return;
+
+  const filterInput = document.getElementById('inputSearchSaved');
+  const query = filterInput ? filterInput.value.toLowerCase().trim() : '';
+
+  const list = getAllSavedFodas();
+  const filtered = list.filter(item => {
+    if (!query) return true;
+    const titleMatch = (item.title || item.carrera || '').toLowerCase().includes(query);
+    const directorMatch = (item.director || '').toLowerCase().includes(query);
+    const siglasMatch = (item.siglas || '').toLowerCase().includes(query);
+    const facultyMatch = (item.facultad || '').toLowerCase().includes(query);
+    return titleMatch || directorMatch || siglasMatch || facultyMatch;
+  });
+
+  if (filtered.length === 0) {
+    container.innerHTML = `
+      <div class="text-center py-8 px-4 bg-slate-50 border border-dashed border-slate-200 rounded-xl">
+        <svg class="w-10 h-10 text-slate-300 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+        <p class="text-xs font-semibold text-slate-600 mb-1">No hay análisis guardados ${query ? 'que coincidan con la búsqueda' : 'aún'}</p>
+        <p class="text-[11px] text-slate-400 mb-3">Llena los datos en el formulario y presiona el botón "Guardar FODA".</p>
+        <button type="button" onclick="saveCurrentFoda()" class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition shadow-2xs">
+          💾 Guardar el FODA actual ahora
+        </button>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = filtered.map(item => {
+    const dateFormatted = item.updatedAt ? new Date(item.updatedAt).toLocaleString('es-DO', {
+      dateStyle: 'medium',
+      timeStyle: 'short'
+    }) : (item.fecha || '');
+
+    const badgeTipo = item.tipoUnidad === 'Coordinación' ? 'bg-purple-100 text-purple-800 border-purple-200' :
+                      item.tipoUnidad === 'Departamento' ? 'bg-blue-100 text-blue-800 border-blue-200' :
+                      'bg-emerald-100 text-emerald-800 border-emerald-200';
+
+    const safeTitle = escapeHtml(item.title || item.carrera || 'Sin Título');
+    const safeDirector = escapeHtml(item.director || 'Responsable no asignado');
+    const safeFacultad = escapeHtml(item.facultad || 'UTESA');
+    const safePeriodo = escapeHtml(item.periodo || `Año ${item.ano || '2026'}`);
+
+    return `
+      <div class="p-3.5 bg-white rounded-xl border border-slate-200 shadow-2xs hover:border-utesa-green/50 hover:shadow-sm transition">
+        <div class="flex items-start justify-between gap-2 mb-1.5">
+          <div>
+            <div class="flex items-center gap-1.5 flex-wrap">
+              <span class="text-[10px] uppercase font-bold px-2 py-0.5 rounded border ${badgeTipo}">${escapeHtml(item.tipoUnidad || 'Carrera')}</span>
+              ${item.siglas ? `<span class="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200">${escapeHtml(item.siglas)}</span>` : ''}
+              <span class="text-[11px] text-slate-400 font-medium">${safePeriodo}</span>
+            </div>
+            <h3 class="text-xs font-bold text-slate-900 mt-1 leading-snug">${safeTitle}</h3>
+          </div>
+        </div>
+
+        <div class="text-[11px] text-slate-500 mb-2.5 space-y-0.5">
+          <div class="flex items-center gap-1">
+            <span class="font-medium text-slate-700">Responsable:</span>
+            <span>${safeDirector} (${escapeHtml(item.cargo || 'Director(a)')})</span>
+          </div>
+          <div class="text-slate-400 text-[10px]">
+            Última actualización: ${dateFormatted}
+          </div>
+        </div>
+
+        <!-- Acciones del Registro -->
+        <div class="flex items-center justify-between pt-2 border-t border-slate-100 flex-wrap gap-1.5">
+          <div class="flex items-center gap-1">
+            <button type="button" onclick="loadSavedFoda('${item.id}')" class="px-2.5 py-1 text-xs font-bold rounded-lg bg-emerald-50 text-emerald-800 hover:bg-emerald-600 hover:text-white border border-emerald-300 transition flex items-center gap-1" title="Cargar este FODA para revisarlo, editarlo o actualizarlo">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+              Cargar y Editar
+            </button>
+            <button type="button" onclick="duplicateSavedFoda('${item.id}')" class="px-2 py-1 text-xs font-medium rounded-lg bg-slate-50 text-slate-700 hover:bg-slate-200 border border-slate-200 transition" title="Duplicar para un nuevo año/cuatrimestre">
+              Duplicar
+            </button>
+          </div>
+          <button type="button" onclick="deleteSavedFoda('${item.id}', '${safeTitle.replace(/'/g, "\\'")}')" class="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded transition" title="Eliminar este registro">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+          </button>
+        </div>
+      </div>
+    `;
+  }).join('');
+};
+
+/**
+ * Exporta todos los registros guardados a un archivo JSON de respaldo
+ */
+window.exportFodaBackup = function() {
+  const list = getAllSavedFodas();
+  const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(list, null, 2));
+  const dlAnchor = document.createElement('a');
+  dlAnchor.setAttribute("href", dataStr);
+  dlAnchor.setAttribute("download", `UTESA_FODA_Respaldo_${new Date().toISOString().slice(0, 10)}.json`);
+  document.body.appendChild(dlAnchor);
+  dlAnchor.click();
+  dlAnchor.remove();
+  showToast("Copia de seguridad exportada con éxito.");
+};
+
+/**
+ * Restaura registros desde un archivo JSON
+ */
+window.importFodaBackup = function(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const imported = JSON.parse(e.target.result);
+      if (Array.isArray(imported)) {
+        const current = getAllSavedFodas();
+        // Unir evitando duplicados de ID
+        const merged = [...imported];
+        current.forEach(item => {
+          if (!merged.some(m => m.id === item.id)) {
+            merged.push(item);
+          }
+        });
+        saveAllFodas(merged);
+        renderSavedFodaList();
+        showToast(`¡Se restauraron ${imported.length} registros exitosamente!`);
+      } else {
+        alert("El archivo no tiene el formato de respaldo válido.");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Error al leer el archivo JSON.");
+    }
+  };
+  reader.readAsText(file);
 };
 
 // Inicializa al cargar el DOM

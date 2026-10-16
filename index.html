@@ -57,6 +57,11 @@
 
       <!-- Acciones Principales -->
       <div class="flex items-center gap-2 flex-wrap">
+        <button type="button" id="btnSaveFoda" onclick="saveCurrentFoda()" class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white transition shadow-sm active:scale-95" title="Guarda este FODA para tu carrera en la memoria del navegador para consultarlo y actualizarlo en cualquier momento">
+          <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path></svg>
+          <span>💾 Guardar FODA</span>
+        </button>
+
         <button type="button" onclick="regenerateAnalysis()" class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-lg bg-amber-500 hover:bg-amber-600 text-white transition shadow-sm active:scale-95" title="Regenera automáticamente las secciones 1, 2, 4, 5 y 6 combinando los factores actuales">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
           ⚡ Regenerar Análisis
@@ -117,17 +122,22 @@
         
         <!-- Pestañas del Editor -->
         <div class="border-b border-slate-200 bg-slate-50 flex">
-          <button type="button" id="tabBtnForm" onclick="switchTab('form')" class="flex-1 py-3 px-4 text-xs font-bold text-utesa-green border-b-2 border-utesa-green bg-white transition flex items-center justify-center gap-1.5">
+          <button type="button" id="tabBtnForm" onclick="switchTab('form')" class="flex-1 py-3 px-3 text-xs font-bold text-utesa-green border-b-2 border-utesa-green bg-white transition flex items-center justify-center gap-1.5">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-            1. Formulario FODA
+            <span>1. Formulario</span>
           </button>
-          <button type="button" id="tabBtnReview" onclick="switchTab('review')" class="flex-1 py-3 px-4 text-xs font-semibold text-slate-500 hover:text-slate-800 transition flex items-center justify-center gap-1.5">
+          <button type="button" id="tabBtnReview" onclick="switchTab('review')" class="flex-1 py-3 px-3 text-xs font-semibold text-slate-500 hover:text-slate-800 transition flex items-center justify-center gap-1.5">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
-            2. Análisis y Conclusión
+            <span>2. Redacción</span>
           </button>
-          <button type="button" id="tabBtnGuide" onclick="switchTab('guide')" class="py-3 px-4 text-xs font-semibold text-slate-500 hover:text-slate-800 transition flex items-center justify-center gap-1">
+          <button type="button" id="tabBtnSaved" onclick="switchTab('saved')" class="flex-1 py-3 px-3 text-xs font-semibold text-slate-500 hover:text-slate-800 transition flex items-center justify-center gap-1.5 relative">
+            <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path></svg>
+            <span>Mis FODA Guardados</span>
+            <span id="badgeSavedCount" class="hidden ml-1 px-1.5 py-0.2 text-[10px] rounded-full bg-emerald-600 text-white font-bold">0</span>
+          </button>
+          <button type="button" id="tabBtnGuide" onclick="switchTab('guide')" class="py-3 px-3 text-xs font-semibold text-slate-500 hover:text-slate-800 transition flex items-center justify-center gap-1">
             <svg class="w-4 h-4 text-amber-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path></svg>
-            Guía
+            <span>Guía</span>
           </button>
         </div>
 
@@ -395,6 +405,46 @@
           </div>
         </div>
 
+        <!-- CONTENIDO PESTAÑA 3: MIS FODA GUARDADOS -->
+        <div id="tabContentSaved" class="hidden p-5 max-h-[calc(100vh-210px)] overflow-y-auto space-y-4">
+          <div class="flex items-center justify-between pb-2 border-b border-slate-200">
+            <div>
+              <h2 class="text-xs font-bold uppercase tracking-wider text-utesa-green flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-utesa-green"></span>
+                Historial de FODA por Carrera / Unidad
+              </h2>
+              <p class="text-[11px] text-slate-500 mt-0.5">Tus documentos guardados localmente. Puedes cargarlos para actualizar o descargarlos.</p>
+            </div>
+            <button type="button" onclick="saveCurrentFoda()" class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition flex items-center gap-1 shadow-2xs">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path></svg>
+              Guardar Actual
+            </button>
+          </div>
+
+          <!-- Buscador / Filtro Rápido -->
+          <div>
+            <input type="text" id="inputSearchSaved" oninput="renderSavedFodaList()" placeholder="🔍 Buscar por carrera, siglas o responsable..." class="w-full text-xs p-2 border border-slate-300 rounded-lg focus:border-utesa-green focus:ring-1 focus:ring-utesa-green outline-none" />
+          </div>
+
+          <!-- Lista de Registros Guardados -->
+          <div id="savedFodaListContainer" class="space-y-3">
+            <!-- Inyectado dinámicamente -->
+          </div>
+
+          <!-- Herramientas de Respaldo / Exportación masiva -->
+          <div class="pt-3 border-t border-slate-200 flex items-center justify-between text-xs text-slate-500">
+            <button type="button" onclick="exportFodaBackup()" class="hover:text-utesa-green font-medium flex items-center gap-1">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+              Exportar copia de seguridad (JSON)
+            </button>
+            <label class="hover:text-utesa-green font-medium flex items-center gap-1 cursor-pointer">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+              Restaurar copia
+              <input type="file" id="importFodaFile" accept=".json" onchange="importFodaBackup(event)" class="hidden" />
+            </label>
+          </div>
+        </div>
+
       </section>
 
       <!-- COLUMNA DERECHA: Vista Previa Fiel al Formato UTESA -->
@@ -437,18 +487,22 @@
   <!-- Script para alternar pestañas del panel lateral -->
   <script>
     function switchTab(tab) {
-      const tabs = ['form', 'review', 'guide'];
+      const tabs = ['form', 'review', 'saved', 'guide'];
       tabs.forEach(t => {
         const btn = document.getElementById('tabBtn' + t.charAt(0).toUpperCase() + t.slice(1));
         const content = document.getElementById('tabContent' + t.charAt(0).toUpperCase() + t.slice(1));
+        if (!btn || !content) return;
         if (t === tab) {
-          btn.className = "flex-1 py-3 px-4 text-xs font-bold text-utesa-green border-b-2 border-utesa-green bg-white transition flex items-center justify-center gap-1.5";
+          btn.className = "flex-1 py-3 px-3 text-xs font-bold text-utesa-green border-b-2 border-utesa-green bg-white transition flex items-center justify-center gap-1.5";
           content.classList.remove('hidden');
         } else {
-          btn.className = "flex-1 py-3 px-4 text-xs font-semibold text-slate-500 hover:text-slate-800 transition flex items-center justify-center gap-1.5";
+          btn.className = "flex-1 py-3 px-3 text-xs font-semibold text-slate-500 hover:text-slate-800 transition flex items-center justify-center gap-1.5";
           content.classList.add('hidden');
         }
       });
+      if (tab === 'saved' && typeof window.renderSavedFodaList === 'function') {
+        window.renderSavedFodaList();
+      }
     }
   </script>
 
