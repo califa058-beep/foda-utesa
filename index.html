@@ -32,6 +32,14 @@
   <!-- Scripts base: librería docx offline y logotipo oficial en base64 -->
   <script src="header-base64.js"></script>
   <script src="docx.iife.js"></script>
+  <!-- Librerías para lectura en navegador de evidencias (PDF y Word) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script>
+    if (window.pdfjsLib) {
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    }
+  </script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
 </head>
 <body class="bg-slate-100 text-slate-800 antialiased min-h-screen flex flex-col">
 
@@ -132,16 +140,20 @@
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
             <span>1. Formulario</span>
           </button>
-          <button type="button" id="tabBtnReview" onclick="switchTab('review')" class="flex-1 py-3 px-3 text-xs font-semibold text-slate-500 hover:text-slate-800 transition flex items-center justify-center gap-1.5">
+          <button type="button" id="tabBtnReview" onclick="switchTab('review')" class="flex-1 py-3 px-2 text-xs font-semibold text-slate-500 hover:text-slate-800 transition flex items-center justify-center gap-1">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
             <span>2. Redacción</span>
           </button>
-          <button type="button" id="tabBtnSaved" onclick="switchTab('saved')" class="flex-1 py-3 px-3 text-xs font-semibold text-slate-500 hover:text-slate-800 transition flex items-center justify-center gap-1.5 relative">
+          <button type="button" id="tabBtnAI" onclick="switchTab('ai')" class="flex-1 py-3 px-2 text-xs font-semibold text-slate-500 hover:text-slate-800 transition flex items-center justify-center gap-1 text-emerald-700 hover:bg-emerald-50">
+            <svg class="w-4 h-4 text-emerald-600 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+            <span class="font-bold">Asistente IA</span>
+          </button>
+          <button type="button" id="tabBtnSaved" onclick="switchTab('saved')" class="flex-1 py-3 px-2 text-xs font-semibold text-slate-500 hover:text-slate-800 transition flex items-center justify-center gap-1 relative">
             <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path></svg>
-            <span>Mis FODA Guardados</span>
+            <span>Guardados</span>
             <span id="badgeSavedCount" class="hidden ml-1 px-1.5 py-0.2 text-[10px] rounded-full bg-emerald-600 text-white font-bold">0</span>
           </button>
-          <button type="button" id="tabBtnGuide" onclick="switchTab('guide')" class="py-3 px-3 text-xs font-semibold text-slate-500 hover:text-slate-800 transition flex items-center justify-center gap-1">
+          <button type="button" id="tabBtnGuide" onclick="switchTab('guide')" class="py-3 px-2 text-xs font-semibold text-slate-500 hover:text-slate-800 transition flex items-center justify-center gap-1">
             <svg class="w-4 h-4 text-amber-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path></svg>
             <span>Guía</span>
           </button>
@@ -411,6 +423,130 @@
           </div>
         </div>
 
+        <!-- CONTENIDO PESTAÑA ASISTENTE IA CON EVIDENCIAS -->
+        <div id="tabContentAI" class="hidden p-5 max-h-[calc(100vh-210px)] overflow-y-auto space-y-4">
+          
+          <!-- Encabezado del Asistente -->
+          <div class="p-3.5 rounded-xl bg-gradient-to-r from-emerald-900 to-utesa-green text-white shadow-sm">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center font-bold text-sm">
+                  ✨
+                </div>
+                <div>
+                  <h3 class="text-xs font-bold leading-tight">Asistente IA – Análisis de Evidencias</h3>
+                  <p class="text-[11px] text-emerald-150 text-white/80">Carga documentos o carpetas de tu departamento y la IA dialogará contigo para construir el FODA.</p>
+                </div>
+              </div>
+              <button type="button" onclick="toggleApiKeyModal()" class="text-[11px] px-2.5 py-1 rounded bg-white/15 hover:bg-white/25 transition border border-white/20 font-medium">
+                🔑 Clave API
+              </button>
+            </div>
+          </div>
+
+          <!-- Alerta de Clave API requerida si no está guardada -->
+          <div id="aiKeyAlert" class="hidden p-3 rounded-lg border border-amber-300 bg-amber-50 text-amber-900 text-xs flex items-start gap-2">
+            <svg class="w-4 h-4 text-amber-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+            <div class="flex-1">
+              <span class="font-bold">Se requiere una clave API gratuita de Google Gemini:</span>
+              <p class="text-[11px] text-amber-800 mt-0.5">La API es 100% gratuita para uso universitario. Se guarda solo en tu navegador.</p>
+              <button type="button" onclick="toggleApiKeyModal()" class="mt-1.5 text-xs font-bold text-amber-900 underline hover:text-amber-950">
+                👉 Ingresar mi clave API de Google
+              </button>
+            </div>
+          </div>
+
+          <!-- Zona de Carga de Documentos / Carpetas -->
+          <div class="border border-slate-200 rounded-xl p-3.5 bg-slate-50 space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-slate-800 uppercase tracking-wide flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-emerald-600"></span>
+                1. Evidencias del Departamento
+              </span>
+              <span id="evidenceCountBadge" class="text-[11px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full">0 archivos</span>
+            </div>
+
+            <!-- Botones de Selección -->
+            <div class="grid grid-cols-2 gap-2">
+              <label class="cursor-pointer flex items-center justify-center gap-1.5 p-2.5 rounded-lg border border-dashed border-slate-300 bg-white hover:border-emerald-600 hover:bg-emerald-50/50 transition text-xs font-semibold text-slate-700 text-center">
+                <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                <span>Subir Archivos (PDF, Word, TXT)</span>
+                <input type="file" id="aiFileInput" multiple accept=".pdf,.docx,.txt,.csv" onchange="handleEvidenceFiles(event)" class="hidden" />
+              </label>
+
+              <label class="cursor-pointer flex items-center justify-center gap-1.5 p-2.5 rounded-lg border border-dashed border-slate-300 bg-white hover:border-emerald-600 hover:bg-emerald-50/50 transition text-xs font-semibold text-slate-700 text-center" title="Selecciona una carpeta completa con todos los archivos de evidencias del POA">
+                <svg class="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path></svg>
+                <span>Cargar Carpeta Completa</span>
+                <input type="file" id="aiFolderInput" webkitdirectory directory multiple onchange="handleEvidenceFiles(event)" class="hidden" />
+              </label>
+            </div>
+
+            <!-- Lista de Archivos Cargados -->
+            <div id="aiLoadedFilesList" class="max-h-36 overflow-y-auto space-y-1 text-xs pr-1">
+              <div class="text-[11px] text-slate-400 italic text-center py-2">
+                Aún no has cargado documentos. Sube informes del POA, calendarios, minutas o comunicaciones oficiales.
+              </div>
+            </div>
+
+            <!-- Botón de Análisis Inicial -->
+            <div class="pt-2 flex items-center justify-between">
+              <button type="button" onclick="clearEvidenceFiles()" class="text-[11px] text-slate-400 hover:text-rose-600 transition">
+                Vaciar evidencias
+              </button>
+              <button type="button" id="btnStartAiAnalysis" onclick="startEvidenceAnalysis()" class="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm transition flex items-center gap-1.5 active:scale-95 disabled:opacity-50">
+                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>
+                <span>Analizar Evidencias con IA</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Chat Interactivo de Diálogo y Preguntas de la IA -->
+          <div class="border border-slate-200 rounded-xl bg-white overflow-hidden shadow-2xs flex flex-col">
+            <div class="p-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+              <span class="text-xs font-bold text-slate-800 uppercase tracking-wide flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-teal-600"></span>
+                2. Diálogo de Validación y Preguntas
+              </span>
+              <button type="button" onclick="clearAiChat()" class="text-[11px] text-slate-400 hover:text-slate-600">
+                Reiniciar chat
+              </button>
+            </div>
+
+            <!-- Mensajes del Chat -->
+            <div id="aiChatMessages" class="p-3.5 space-y-3 min-h-[220px] max-h-[300px] overflow-y-auto text-xs bg-slate-50/40">
+              <div class="p-3 rounded-lg bg-white border border-slate-200 text-slate-700 space-y-1">
+                <div class="font-bold text-emerald-800 flex items-center gap-1">
+                  <span>🤖 Asistente Institucional:</span>
+                </div>
+                <p>¡Hola! Cuando cargues los documentos de tu carrera o departamento y presiones <strong>"Analizar Evidencias con IA"</strong>, examinaré cada archivo buscando actividades, solicitudes a Vicerrectoría, convenios, talleres y metas del POA.</p>
+                <p class="text-[11px] text-slate-500">Si encuentro situaciones incompletas o dudosas (por ejemplo: equipos solicitados, convenios no cerrados o actividades pendientes), <strong>te haré preguntas puntuales aquí</strong> para clarificarlas antes de incorporarlas al FODA oficial.</p>
+              </div>
+            </div>
+
+            <!-- Entrada de Respuesta del Director -->
+            <div class="p-2.5 bg-white border-t border-slate-200 flex items-center gap-2">
+              <input type="text" id="inputAiUserResponse" onkeydown="if(event.key==='Enter') sendAiUserMessage()" placeholder="Escribe tu respuesta a las preguntas de la IA..." class="flex-1 text-xs p-2 border border-slate-300 rounded-lg focus:border-utesa-green focus:ring-1 focus:ring-utesa-green outline-none" />
+              <button type="button" onclick="sendAiUserMessage()" class="px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition active:scale-95 flex items-center gap-1">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
+                Responder
+              </button>
+            </div>
+          </div>
+
+          <!-- Botón de Inyección Automática al Formulario Oficial -->
+          <div class="p-3.5 rounded-xl border border-emerald-300 bg-emerald-50/60 flex items-center justify-between gap-3">
+            <div>
+              <h4 class="text-xs font-bold text-emerald-950">¿Listo con el diálogo y las respuestas?</h4>
+              <p class="text-[11px] text-emerald-800">Inyecta los factores extraídos directamente a las casillas de Fortalezas, Debilidades, Oportunidades y Amenazas.</p>
+            </div>
+            <button type="button" id="btnApplyAiToFoda" onclick="applyAiProposalToFoda()" class="px-4 py-2.5 rounded-lg bg-utesa-green hover:bg-utesa-darkgreen text-white font-bold text-xs transition shadow-sm active:scale-95 shrink-0 flex items-center gap-1.5 disabled:opacity-50" disabled>
+              <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+              <span>Aplicar al FODA Oficial</span>
+            </button>
+          </div>
+
+        </div>
+
         <!-- CONTENIDO PESTAÑA 3: MIS FODA GUARDADOS -->
         <div id="tabContentSaved" class="hidden p-5 max-h-[calc(100vh-210px)] overflow-y-auto space-y-4">
           <div class="flex items-center justify-between pb-2 border-b border-slate-200">
@@ -485,6 +621,58 @@
     </div>
   </main>
 
+  <!-- Modal para Configurar Clave API de Google Gemini -->
+  <div id="apiKeyModal" class="no-print fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-md w-full p-5 space-y-4 animate-in fade-in zoom-in-95 duration-150">
+      <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold text-sm">
+            🔑
+          </div>
+          <div>
+            <h3 class="text-xs font-bold text-slate-900">Configurar Clave API (Google Gemini)</h3>
+            <p class="text-[11px] text-slate-400">Para el Asistente de IA y lectura de documentos</p>
+          </div>
+        </div>
+        <button type="button" onclick="toggleApiKeyModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded">
+          ✕
+        </button>
+      </div>
+
+      <div class="space-y-2.5 text-xs text-slate-600">
+        <p>Google ofrece una clave de IA <strong>100% gratuita</strong> que puedes generar en 30 segundos:</p>
+        <ol class="list-decimal pl-4 space-y-1 text-[11px] text-slate-500">
+          <li>Ingresa a <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-emerald-700 underline font-bold">Google AI Studio (aistudio.google.com)</a> con cualquier cuenta de Google / Gmail.</li>
+          <li>Haz clic en <strong>"Create API key"</strong> (Crear clave de API).</li>
+          <li>Copia tu clave y pégala a continuación:</li>
+        </ol>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Clave de API de Gemini:</label>
+          <input type="password" id="inputGeminiApiKey" placeholder="AIzaSy..." class="w-full text-xs font-mono p-2.5 border border-slate-300 rounded-lg focus:border-utesa-green focus:ring-1 focus:ring-utesa-green outline-none" />
+        </div>
+
+        <p class="text-[10px] text-slate-400">
+          🔒 <strong>Privacidad total:</strong> Tu clave nunca sale de tu computadora ni se envía a servidores de terceros; se almacena únicamente en el <code>localStorage</code> de tu navegador.
+        </p>
+      </div>
+
+      <div class="flex items-center justify-between pt-2 border-t border-slate-100">
+        <button type="button" onclick="removeGeminiApiKey()" class="text-[11px] text-rose-600 hover:text-rose-800 font-medium">
+          Eliminar clave guardada
+        </button>
+        <div class="flex items-center gap-2">
+          <button type="button" onclick="toggleApiKeyModal()" class="px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-100 rounded-lg">
+            Cancelar
+          </button>
+          <button type="button" onclick="saveGeminiApiKey()" class="px-4 py-1.5 text-xs font-bold rounded-lg bg-utesa-green hover:bg-utesa-darkgreen text-white shadow-sm transition">
+            Guardar Clave
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Notificación Toast -->
   <div id="toast" class="no-print fixed bottom-6 right-6 z-50 bg-slate-900 text-white text-xs px-4 py-2.5 rounded-lg shadow-xl opacity-0 pointer-events-none transition-all duration-300 flex items-center gap-2">
     Notificación
@@ -493,21 +681,24 @@
   <!-- Script para alternar pestañas del panel lateral -->
   <script>
     function switchTab(tab) {
-      const tabs = ['form', 'review', 'saved', 'guide'];
+      const tabs = ['form', 'review', 'ai', 'saved', 'guide'];
       tabs.forEach(t => {
         const btn = document.getElementById('tabBtn' + t.charAt(0).toUpperCase() + t.slice(1));
         const content = document.getElementById('tabContent' + t.charAt(0).toUpperCase() + t.slice(1));
         if (!btn || !content) return;
         if (t === tab) {
-          btn.className = "flex-1 py-3 px-3 text-xs font-bold text-utesa-green border-b-2 border-utesa-green bg-white transition flex items-center justify-center gap-1.5";
+          btn.className = "flex-1 py-3 px-2 text-xs font-bold text-utesa-green border-b-2 border-utesa-green bg-white transition flex items-center justify-center gap-1";
           content.classList.remove('hidden');
         } else {
-          btn.className = "flex-1 py-3 px-3 text-xs font-semibold text-slate-500 hover:text-slate-800 transition flex items-center justify-center gap-1.5";
+          btn.className = "flex-1 py-3 px-2 text-xs font-semibold text-slate-500 hover:text-slate-800 transition flex items-center justify-center gap-1";
           content.classList.add('hidden');
         }
       });
       if (tab === 'saved' && typeof window.renderSavedFodaList === 'function') {
         window.renderSavedFodaList();
+      }
+      if (tab === 'ai' && typeof window.checkGeminiApiKeyStatus === 'function') {
+        window.checkGeminiApiKeyStatus();
       }
     }
   </script>

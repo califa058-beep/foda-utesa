@@ -1965,5 +1965,526 @@ window.importFodaBackup = function(event) {
   reader.readAsText(file);
 };
 
+/**
+ * =====================================================================
+ * ASISTENTE DE INTELIGENCIA ARTIFICIAL CON EVIDENCIAS (GOOGLE GEMINI)
+ * =====================================================================
+ * Permite cargar documentos (PDF, Word, TXT) o carpetas completas de evidencias,
+ * dialogar interactivamente para resolver situaciones dudosas / pendientes,
+ * y estructurar automáticamente las Fortalezas, Debilidades, Oportunidades y Amenazas.
+ */
+
+const GEMINI_KEY_STORAGE = 'UTESA_GEMINI_API_KEY';
+
+// Estado del asistente IA
+const aiState = {
+  apiKey: '',
+  files: [], // Array de { name, type, size, text }
+  chatHistory: [], // Historial de conversación con la IA
+  extractedFoda: null, // Propuesta FODA generada { fortalezas, debilidades, oportunidades, amenazas, fuentes }
+  isProcessing: false
+};
+
+// Carga la clave API almacenada
+function loadGeminiApiKey() {
+  aiState.apiKey = localStorage.getItem(GEMINI_KEY_STORAGE) || '';
+}
+
+// Verifica el estado de la clave API y muestra u oculta la alerta
+window.checkGeminiApiKeyStatus = function() {
+  loadGeminiApiKey();
+  const alertEl = document.getElementById('aiKeyAlert');
+  const inputEl = document.getElementById('inputGeminiApiKey');
+  if (inputEl) inputEl.value = aiState.apiKey;
+  if (alertEl) {
+    if (!aiState.apiKey) {
+      alertEl.classList.remove('hidden');
+    } else {
+      alertEl.classList.add('hidden');
+    }
+  }
+};
+
+// Abre o cierra el modal de configuración de la clave API
+window.toggleApiKeyModal = function() {
+  const modal = document.getElementById('apiKeyModal');
+  if (!modal) return;
+  loadGeminiApiKey();
+  const inputEl = document.getElementById('inputGeminiApiKey');
+  if (inputEl) inputEl.value = aiState.apiKey;
+  modal.classList.toggle('hidden');
+};
+
+// Guarda la clave API en localStorage
+window.saveGeminiApiKey = function() {
+  const inputEl = document.getElementById('inputGeminiApiKey');
+  const key = inputEl ? inputEl.value.trim() : '';
+  if (!key) {
+    alert("Por favor introduce una clave de API válida.");
+    return;
+  }
+  localStorage.setItem(GEMINI_KEY_STORAGE, key);
+  aiState.apiKey = key;
+  toggleApiKeyModal();
+  checkGeminiApiKeyStatus();
+  showToast("Clave API de Gemini guardada correctamente.");
+};
+
+// Elimina la clave API guardada
+window.removeGeminiApiKey = function() {
+  if (confirm("¿Deseas eliminar la clave API guardada en este navegador?")) {
+    localStorage.removeItem(GEMINI_KEY_STORAGE);
+    aiState.apiKey = '';
+    const inputEl = document.getElementById('inputGeminiApiKey');
+    if (inputEl) inputEl.value = '';
+    toggleApiKeyModal();
+    checkGeminiApiKeyStatus();
+    showToast("Clave API eliminada.");
+  }
+};
+
+/**
+ * Lee y extrae el texto de archivos seleccionados (PDF, Word, TXT)
+ */
+window.handleEvidenceFiles = async function(event) {
+  const fileList = event.target.files;
+  if (!fileList || fileList.length === 0) return;
+
+  const btn = document.getElementById('btnStartAiAnalysis');
+  const badge = document.getElementById('evidenceCountBadge');
+  if (badge) badge.textContent = "Leyendo archivos...";
+
+  for (let i = 0; i < fileList.length; i++) {
+    const file = fileList[i];
+    const name = file.name;
+    const ext = name.split('.').pop().toLowerCase();
+
+    // Evitar duplicados por nombre
+    if (aiState.files.some(f => f.name === name && f.size === file.size)) continue;
+
+    try {
+      let extractedText = '';
+
+      if (ext === 'txt' || ext === 'csv') {
+        extractedText = await file.text();
+      } else if (ext === 'pdf') {
+        extractedText = await extractTextFromPdf(file);
+      } else if (ext === 'docx') {
+        extractedText = await extractTextFromDocx(file);
+      } else {
+        // Formato no directamente procesable como texto puro
+        continue;
+      }
+
+      if (extractedText && extractedText.trim().length > 0) {
+        aiState.files.push({
+          name: file.webkitRelativePath || name,
+          size: file.size,
+          type: ext,
+          text: extractedText.trim()
+        });
+      }
+    } catch (err) {
+      console.warn(`No se pudo leer el archivo ${name}:`, err);
+    }
+  }
+
+  renderLoadedEvidenceList();
+  showToast(`Se cargaron ${aiState.files.length} documento(s) de evidencia.`);
+  event.target.value = '';
+};
+
+// Extractor de PDF usando PDF.js
+async function extractTextFromPdf(file) {
+  if (!window.pdfjsLib) {
+    throw new Error("Librería PDF.js no disponible");
+  }
+  const arrayBuffer = await file.arrayBuffer();
+  const pdf = await window.pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+  let fullText = '';
+  const maxPages = Math.min(pdf.numPages, 40); // Límite razonable por documento
+  for (let pageNum = 1; pageNum <= maxPages; pageNum++) {
+    const page = await pdf.getPage(pageNum);
+    const content = await page.getTextContent();
+    const strings = content.items.map(item => item.str);
+    fullText += strings.join(' ') + '\n';
+  }
+  return fullText;
+}
+
+// Extractor de DOCX usando Mammoth.js
+async function extractTextFromDocx(file) {
+  if (!window.mammoth) {
+    throw new Error("Librería Mammoth.js no disponible");
+  }
+  const arrayBuffer = await file.arrayBuffer();
+  const result = await window.mammoth.extractRawText({ arrayBuffer: arrayBuffer });
+  return result.value || '';
+}
+
+// Renderiza la lista de archivos de evidencia cargados en la interfaz
+function renderLoadedEvidenceList() {
+  const container = document.getElementById('aiLoadedFilesList');
+  const badge = document.getElementById('evidenceCountBadge');
+  if (badge) badge.textContent = `${aiState.files.length} archivo(s)`;
+
+  if (!container) return;
+
+  if (aiState.files.length === 0) {
+    container.innerHTML = `
+      <div class="text-[11px] text-slate-400 italic text-center py-2">
+        Aún no has cargado documentos. Sube informes del POA, calendarios, minutas o comunicaciones oficiales.
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = aiState.files.map((f, index) => `
+    <div class="flex items-center justify-between p-1.5 rounded bg-white border border-slate-200 text-[11px] text-slate-700">
+      <div class="flex items-center gap-1.5 truncate max-w-[80%]">
+        <span class="font-bold text-[10px] px-1 py-0.2 rounded uppercase ${
+          f.type === 'pdf' ? 'bg-red-100 text-red-700' :
+          f.type === 'docx' ? 'bg-blue-100 text-blue-700' :
+          'bg-slate-100 text-slate-700'
+        }">${f.type}</span>
+        <span class="truncate" title="${escapeHtml(f.name)}">${escapeHtml(f.name)}</span>
+      </div>
+      <button type="button" onclick="removeEvidenceFile(${index})" class="text-slate-400 hover:text-rose-600 transition p-0.5" title="Quitar archivo">
+        ✕
+      </button>
+    </div>
+  `).join('');
+}
+
+// Elimina un archivo individual
+window.removeEvidenceFile = function(index) {
+  aiState.files.splice(index, 1);
+  renderLoadedEvidenceList();
+};
+
+// Vacía la lista completa de evidencias
+window.clearEvidenceFiles = function() {
+  if (aiState.files.length === 0) return;
+  if (confirm("¿Deseas vaciar la lista de evidencias cargadas?")) {
+    aiState.files = [];
+    renderLoadedEvidenceList();
+    showToast("Evidencias eliminadas.");
+  }
+};
+
+// Reinicia el chat de IA
+window.clearAiChat = function() {
+  aiState.chatHistory = [];
+  aiState.extractedFoda = null;
+  const btnApply = document.getElementById('btnApplyAiToFoda');
+  if (btnApply) btnApply.disabled = true;
+
+  const msgContainer = document.getElementById('aiChatMessages');
+  if (msgContainer) {
+    msgContainer.innerHTML = `
+      <div class="p-3 rounded-lg bg-white border border-slate-200 text-slate-700 space-y-1">
+        <div class="font-bold text-emerald-800 flex items-center gap-1">
+          <span>🤖 Asistente Institucional:</span>
+        </div>
+        <p>Chat reiniciado. Carga tus documentos y presiona <strong>"Analizar Evidencias con IA"</strong> para iniciar un nuevo diagnóstico interactivo.</p>
+      </div>
+    `;
+  }
+};
+
+/**
+ * Agrega un mensaje a la ventana visual del chat
+ */
+function appendChatMessage(role, text) {
+  const container = document.getElementById('aiChatMessages');
+  if (!container) return;
+
+  const msgDiv = document.createElement('div');
+  if (role === 'user') {
+    msgDiv.className = 'p-3 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-950 ml-6';
+    msgDiv.innerHTML = `
+      <div class="font-bold text-emerald-800 mb-1 flex items-center gap-1 text-[11px]">
+        <span>👤 Tú (Director / Responsable):</span>
+      </div>
+      <div class="whitespace-pre-line">${escapeHtml(text)}</div>
+    `;
+  } else {
+    msgDiv.className = 'p-3 rounded-lg bg-white border border-slate-200 text-slate-800 mr-6 shadow-2xs';
+    msgDiv.innerHTML = `
+      <div class="font-bold text-emerald-800 mb-1 flex items-center gap-1 text-[11px]">
+        <span>🤖 Asistente Institucional:</span>
+      </div>
+      <div class="whitespace-pre-line leading-relaxed">${formatAiResponseHtml(text)}</div>
+    `;
+  }
+
+  container.appendChild(msgDiv);
+  container.scrollTop = container.scrollHeight;
+}
+
+// Formatea el texto de la IA para resaltar viñetas y títulos en el chat
+function formatAiResponseHtml(text) {
+  if (!text) return '';
+  return escapeHtml(text)
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/^\s*•\s*(.*)$/gm, '<li class="ml-3 list-disc">$1</li>')
+    .replace(/^\s*\d+\.\s*(.*)$/gm, '<li class="ml-3 list-decimal">$1</li>');
+}
+
+/**
+ * Llamada a la API de Google Gemini (v1beta gemini-1.5-flash / gemini-2.0-flash)
+ */
+async function callGeminiApi(messagesPayload) {
+  loadGeminiApiKey();
+  if (!aiState.apiKey) {
+    toggleApiKeyModal();
+    throw new Error("Por favor configura tu clave de API de Google Gemini gratuita para continuar.");
+  }
+
+  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${aiState.apiKey}`;
+
+  // Formato para Gemini API
+  const contents = messagesPayload.map(m => ({
+    role: m.role === 'assistant' ? 'model' : 'user',
+    parts: [{ text: m.content }]
+  }));
+
+  const response = await fetch(endpoint, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: contents,
+      generationConfig: {
+        temperature: 0.3,
+        topP: 0.95,
+        maxOutputTokens: 2048
+      }
+    })
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    const errorMsg = errorData.error?.message || `Error ${response.status}: ${response.statusText}`;
+    throw new Error(errorMsg);
+  }
+
+  const data = await response.json();
+  const candidate = data.candidates?.[0];
+  const textOutput = candidate?.content?.parts?.[0]?.text;
+  if (!textOutput) {
+    throw new Error("La API no devolvió texto de respuesta.");
+  }
+  return textOutput;
+}
+
+/**
+ * Paso 1: Analizar Evidencias y Plantear Preguntas de Validación
+ */
+window.startEvidenceAnalysis = async function() {
+  if (aiState.files.length === 0) {
+    alert("Por favor carga al menos un archivo de evidencias (PDF, Word o TXT) antes de analizar.");
+    return;
+  }
+
+  loadGeminiApiKey();
+  if (!aiState.apiKey) {
+    toggleApiKeyModal();
+    return;
+  }
+
+  const btn = document.getElementById('btnStartAiAnalysis');
+  const originalText = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = `
+    <svg class="w-4 h-4 text-white animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
+    <span>Analizando documentos...</span>
+  `;
+
+  try {
+    const u = getUnitInfo();
+    const carreraActual = state.carrera || "la unidad correspondiente";
+    const tipoActual = state.tipoUnidad || "Carrera";
+
+    // Resumir evidencias concatenadas
+    let combinedEvidence = "";
+    aiState.files.forEach((f, idx) => {
+      // Limitar a los primeros 6000 caracteres de cada documento para balancear tokens
+      const snippet = f.text.slice(0, 6000);
+      combinedEvidence += `\n--- DOCUMENTO ${idx + 1}: ${f.name} ---\n${snippet}\n`;
+    });
+
+    const systemPrompt = `
+Actúas como Asistente de Planificación Estratégica Institucional de la Universidad Tecnológica de Santiago (UTESA).
+Tu rol es ayudar al Director(a) o Coordinador(a) de ${u.displayTitle} (${tipoActual}) a construir su Análisis FODA oficial para el POA 2026.
+
+Has recibido los siguientes documentos y evidencias del departamento:
+${combinedEvidence}
+
+INSTRUCCIONES CLAVE DE INTERACCIÓN:
+1. Sintetiza brevemente lo que has identificado en los documentos (logros, actividades curriculares, convenios, talleres, etc.).
+2. Formula exactamente entre 3 y 5 PREGUNTAS PUNTUALES Y CRÍTICAS sobre situaciones que detectes incompletas, en proceso, solicitudes a Vicerrectoría o convenios, para que el director aclare su estado real (por ejemplo: "¿Se completó la compra/climatización?", "¿El convenio con la empresa X está formalmente firmado o fue una visita puntual?", "¿Se logró la meta de participantes en tal taller?").
+3. Presenta un BORRADOR PRELIMINAR de los 4 cuadrantes (Fortalezas, Debilidades, Oportunidades, Amenazas) derivado de las evidencias.
+4. Finaliza invitando al director a responder tus preguntas o aclarar cualquier punto para afinar el FODA definitivo.
+
+Mantén un tono académico, formal, constructivo e institucional propio de UTESA.
+`;
+
+    aiState.chatHistory = [
+      { role: 'user', content: systemPrompt }
+    ];
+
+    const aiResponse = await callGeminiApi(aiState.chatHistory);
+    aiState.chatHistory.push({ role: 'assistant', content: aiResponse });
+
+    appendChatMessage('assistant', aiResponse);
+
+    // Habilitar botón de aplicar
+    const btnApply = document.getElementById('btnApplyAiToFoda');
+    if (btnApply) btnApply.disabled = false;
+
+    showToast("¡Evidencias analizadas! Responde las preguntas de la IA abajo.");
+  } catch (err) {
+    console.error("Error al analizar evidencias:", err);
+    alert(`Ocurrió un error con el Asistente IA: ${err.message}`);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = originalText;
+  }
+};
+
+/**
+ * Paso 2: El usuario responde a las preguntas y continúa el diálogo
+ */
+window.sendAiUserMessage = async function() {
+  const inputEl = document.getElementById('inputAiUserResponse');
+  const userText = inputEl ? inputEl.value.trim() : '';
+  if (!userText) return;
+
+  inputEl.value = '';
+  appendChatMessage('user', userText);
+
+  aiState.chatHistory.push({ role: 'user', content: userText });
+
+  // Placeholder temporal
+  const container = document.getElementById('aiChatMessages');
+  const loadingDiv = document.createElement('div');
+  loadingDiv.id = 'aiChatLoadingPlaceholder';
+  loadingDiv.className = 'text-xs text-slate-400 italic p-2';
+  loadingDiv.textContent = 'La IA está procesando tu respuesta e integrando las evidencias...';
+  container.appendChild(loadingDiv);
+  container.scrollTop = container.scrollHeight;
+
+  try {
+    const aiResponse = await callGeminiApi(aiState.chatHistory);
+    aiState.chatHistory.push({ role: 'assistant', content: aiResponse });
+
+    const loader = document.getElementById('aiChatLoadingPlaceholder');
+    if (loader) loader.remove();
+
+    appendChatMessage('assistant', aiResponse);
+
+    const btnApply = document.getElementById('btnApplyAiToFoda');
+    if (btnApply) btnApply.disabled = false;
+  } catch (err) {
+    const loader = document.getElementById('aiChatLoadingPlaceholder');
+    if (loader) loader.remove();
+    alert(`Error en el diálogo con la IA: ${err.message}`);
+  }
+};
+
+/**
+ * Paso 3: Aplicar la propuesta definitiva consolidada al formulario FODA oficial
+ */
+window.applyAiProposalToFoda = async function() {
+  if (aiState.chatHistory.length === 0) {
+    alert("Primero debes analizar las evidencias antes de aplicar.");
+    return;
+  }
+
+  const btn = document.getElementById('btnApplyAiToFoda');
+  const originalText = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = `<span>Consolidando FODA...</span>`;
+
+  try {
+    const extractionPrompt = `
+Con base en todos los documentos analizados y las respuestas y aclaraciones dadas por el Director en el diálogo anterior, genera la ESTRUCTURA DEFINITIVA Y FINAL del FODA oficial en formato JSON estricto.
+
+Devuelve ÚNICAMENTE un bloque de código JSON con este esquema exacto, sin explicaciones adicionales:
+{
+  "fortalezas": [
+    "Viñeta formal y detallada citando evidencias...",
+    "Viñeta 2...",
+    ...
+  ],
+  "debilidades": [
+    "Viñeta formal aclarando lo que está pendiente o sin cerrar...",
+    ...
+  ],
+  "oportunidades": [
+    "Viñeta de factores externos, leyes, sector productivo...",
+    ...
+  ],
+  "amenazas": [
+    "Viñeta de factores externos de riesgo, competencia, tecnología...",
+    ...
+  ],
+  "fuentesSugeridas": "Texto consolidado de las fuentes de evidencia utilizadas (documentos cargados, POA, actas y comunicaciones de la Dirección)"
+}
+
+Asegúrate de:
+- Escribir viñetas completas, profesionales y con redacción ejecutiva.
+- Incluir entre 4 y 8 viñetas para cada cuadrante.
+- Reflejar con precisión lo que el director aclaró que está cerrado versus lo que continúa pendiente.
+`;
+
+    const requestPayload = [
+      ...aiState.chatHistory,
+      { role: 'user', content: extractionPrompt }
+    ];
+
+    const jsonResponseRaw = await callGeminiApi(requestPayload);
+    
+    // Extraer bloque JSON
+    const match = jsonResponseRaw.match(/\{[\s\S]*\}/);
+    if (!match) {
+      throw new Error("No se pudo interpretar el formato JSON generado por la IA.");
+    }
+
+    const structuredFoda = JSON.parse(match[0]);
+
+    if (Array.isArray(structuredFoda.fortalezas) && structuredFoda.fortalezas.length > 0) {
+      state.fortalezas = structuredFoda.fortalezas;
+    }
+    if (Array.isArray(structuredFoda.debilidades) && structuredFoda.debilidades.length > 0) {
+      state.debilidades = structuredFoda.debilidades;
+    }
+    if (Array.isArray(structuredFoda.oportunidades) && structuredFoda.oportunidades.length > 0) {
+      state.oportunidades = structuredFoda.oportunidades;
+    }
+    if (Array.isArray(structuredFoda.amenazas) && structuredFoda.amenazas.length > 0) {
+      state.amenazas = structuredFoda.amenazas;
+    }
+
+    if (structuredFoda.fuentesSugeridas) {
+      state.fuentes = structuredFoda.fuentesSugeridas;
+    }
+
+    // Regenerar toda la redacción y actualizar la vista
+    generateDocumentContent();
+    renderForm();
+    renderPreview();
+    switchTab('form');
+    showToast("¡FODA oficial actualizado exitosamente con la interpretación de las evidencias!");
+  } catch (err) {
+    console.error("Error al consolidar FODA:", err);
+    alert(`Ocurrió un detalle al inyectar el FODA: ${err.message}`);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = originalText;
+  }
+};
+
 // Inicializa al cargar el DOM
 document.addEventListener('DOMContentLoaded', initApp);
+
