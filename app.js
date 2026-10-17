@@ -2232,7 +2232,7 @@ function formatAiResponseHtml(text) {
 }
 
 /**
- * Llamada a la API de Google Gemini (v1beta gemini-1.5-flash / gemini-2.0-flash)
+ * Llamada resiliente a la API de Google Gemini con fallback automático entre modelos
  */
 async function callGeminiApi(messagesPayload) {
   loadGeminiApiKey();
@@ -2241,40 +2241,73 @@ async function callGeminiApi(messagesPayload) {
     throw new Error("Por favor configura tu clave de API de Google Gemini gratuita para continuar.");
   }
 
-  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${aiState.apiKey}`;
+  // Lista priorizada de modelos compatibles con generateContent
+  const candidateEndpoints = [
+    (model) => `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${aiState.apiKey}`,
+    (model) => `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${aiState.apiKey}`
+  ];
 
-  // Formato para Gemini API
+  const candidateModels = [
+    'gemini-2.5-flash',
+    'gemini-2.0-flash',
+    'gemini-2.0-flash-exp',
+    'gemini-1.5-flash-latest',
+    'gemini-1.5-flash',
+    'gemini-1.5-pro-latest',
+    'gemini-1.5-pro'
+  ];
+
+  // Preparar payload compatible
   const contents = messagesPayload.map(m => ({
     role: m.role === 'assistant' ? 'model' : 'user',
     parts: [{ text: m.content }]
   }));
 
-  const response = await fetch(endpoint, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      contents: contents,
-      generationConfig: {
-        temperature: 0.3,
-        topP: 0.95,
-        maxOutputTokens: 2048
-      }
-    })
+  const requestBody = JSON.stringify({
+    contents: contents,
+    generationConfig: {
+      temperature: 0.3,
+      topP: 0.95,
+      maxOutputTokens: 2048
+    }
   });
 
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    const errorMsg = errorData.error?.message || `Error ${response.status}: ${response.statusText}`;
-    throw new Error(errorMsg);
+  let lastError = null;
+
+  // Probar endpoints y modelos hasta encontrar uno disponible con esta clave
+  for (const model of candidateModels) {
+    for (const makeUrl of candidateEndpoints) {
+      try {
+        const url = makeUrl(model);
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: requestBody
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          const candidate = data.candidates?.[0];
+          const textOutput = candidate?.content?.parts?.[0]?.text;
+          if (textOutput) {
+            return textOutput;
+          }
+        } else {
+          const errData = await response.json().catch(() => ({}));
+          // Si es 404 (modelo no encontrado en este endpoint), probar el siguiente
+          if (response.status === 404) {
+            continue;
+          }
+          // Si es un error de cuota o clave inválida (400, 403, 429), registrarlo
+          lastError = errData.error?.message || `Error ${response.status}: ${response.statusText}`;
+        }
+      } catch (networkErr) {
+        lastError = networkErr.message;
+      }
+    }
   }
 
-  const data = await response.json();
-  const candidate = data.candidates?.[0];
-  const textOutput = candidate?.content?.parts?.[0]?.text;
-  if (!textOutput) {
-    throw new Error("La API no devolvió texto de respuesta.");
-  }
-  return textOutput;
+  throw new Error(lastError || "No se pudo conectar con ningún modelo de Gemini disponible. Verifica que la clave API esté activa.");
 }
 
 /**
