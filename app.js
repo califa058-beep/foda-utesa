@@ -2232,7 +2232,10 @@ function formatAiResponseHtml(text) {
 }
 
 /**
- * Llamada resiliente a la API de Google Gemini con fallback automático entre modelos
+ * Llamada inteligente a la API de Google Gemini:
+ * 1. Consulta dinámicamente qué modelos tiene habilitados la clave con models?key=...
+ * 2. Selecciona el mejor modelo compatible y realiza la consulta
+ * 3. Muestra el error exacto (clave inválida, cuota, restricciones) si falla
  */
 async function callGeminiApi(messagesPayload) {
   loadGeminiApiKey();
@@ -2240,22 +2243,6 @@ async function callGeminiApi(messagesPayload) {
     toggleApiKeyModal();
     throw new Error("Por favor configura tu clave de API de Google Gemini gratuita para continuar.");
   }
-
-  // Lista priorizada de modelos compatibles con generateContent
-  const candidateEndpoints = [
-    (model) => `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${aiState.apiKey}`,
-    (model) => `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${aiState.apiKey}`
-  ];
-
-  const candidateModels = [
-    'gemini-2.5-flash',
-    'gemini-2.0-flash',
-    'gemini-2.0-flash-exp',
-    'gemini-1.5-flash-latest',
-    'gemini-1.5-flash',
-    'gemini-1.5-pro-latest',
-    'gemini-1.5-pro'
-  ];
 
   // Preparar payload compatible
   const contents = messagesPayload.map(m => ({
@@ -2272,13 +2259,68 @@ async function callGeminiApi(messagesPayload) {
     }
   });
 
-  let lastError = null;
+  // Paso 1: Intentar consultar los modelos disponibles en la cuenta
+  let availableModels = [];
+  let authErrorMessage = null;
 
-  // Probar endpoints y modelos hasta encontrar uno disponible con esta clave
-  for (const model of candidateModels) {
-    for (const makeUrl of candidateEndpoints) {
+  try {
+    const listRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${aiState.apiKey}`);
+    if (listRes.ok) {
+      const listData = await listRes.json();
+      if (Array.isArray(listData.models)) {
+        availableModels = listData.models
+          .filter(m => m.supportedGenerationMethods && m.supportedGenerationMethods.includes('generateContent'))
+          .map(m => m.name.replace(/^models\//, ''));
+      }
+    } else {
+      const errJson = await listRes.json().catch(() => ({}));
+      authErrorMessage = errJson.error?.message || `Error ${listRes.status}: ${listRes.statusText}`;
+    }
+  } catch (e) {
+    console.warn("No se pudo listar modelos dinámicamente:", e);
+  }
+
+  // Si la clave no es válida o está deshabilitada, informar de inmediato
+  if (authErrorMessage && !availableModels.length) {
+    // Si el error es de clave inválida
+    if (authErrorMessage.toLowerCase().includes('api key') || authErrorMessage.toLowerCase().includes('permission') || authErrorMessage.toLowerCase().includes('invalid')) {
+      throw new Error(`La clave API no es válida o no está activa en Google AI Studio: ${authErrorMessage}`);
+    }
+  }
+
+  // Lista de modelos preferidos ordenados por calidad/velocidad
+  const priorityList = [
+    'gemini-2.5-flash',
+    'gemini-2.0-flash',
+    'gemini-2.0-flash-exp',
+    'gemini-1.5-flash',
+    'gemini-1.5-flash-8b',
+    'gemini-1.5-flash-latest',
+    'gemini-1.5-pro',
+    'gemini-1.5-pro-latest'
+  ];
+
+  // Intersectar con los modelos realmente disponibles si se pudieron obtener
+  let targetModels = [];
+  if (availableModels.length > 0) {
+    targetModels = [
+      ...priorityList.filter(p => availableModels.includes(p)),
+      ...availableModels.filter(m => !priorityList.includes(m))
+    ];
+  } else {
+    targetModels = priorityList;
+  }
+
+  let lastError = authErrorMessage || null;
+
+  for (const model of targetModels) {
+    const endpoints = [
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${aiState.apiKey}`,
+      `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${aiState.apiKey}`
+    ];
+
+    for (const url of endpoints) {
       try {
-        const url = makeUrl(model);
         const response = await fetch(url, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -2294,20 +2336,23 @@ async function callGeminiApi(messagesPayload) {
           }
         } else {
           const errData = await response.json().catch(() => ({}));
-          // Si es 404 (modelo no encontrado en este endpoint), probar el siguiente
-          if (response.status === 404) {
-            continue;
-          }
-          // Si es un error de cuota o clave inválida (400, 403, 429), registrarlo
           lastError = errData.error?.message || `Error ${response.status}: ${response.statusText}`;
+          if (response.status === 404) {
+            continue; // Probar siguiente endpoint o modelo
+          }
+          // Si es error de cuota o clave, romper temprano para avisar
+          if (response.status === 400 || response.status === 403) {
+            throw new Error(`Google API: ${lastError}`);
+          }
         }
-      } catch (networkErr) {
-        lastError = networkErr.message;
+      } catch (reqErr) {
+        if (reqErr.message.startsWith('Google API:')) throw reqErr;
+        lastError = reqErr.message;
       }
     }
   }
 
-  throw new Error(lastError || "No se pudo conectar con ningún modelo de Gemini disponible. Verifica que la clave API esté activa.");
+  throw new Error(`Detalle de Google Gemini: ${lastError || 'Verifica que la clave API esté activa y tenga permisos.'}`);
 }
 
 /**
