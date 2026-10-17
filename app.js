@@ -143,6 +143,11 @@ function getUnitInfo() {
   };
 }
 
+// Alias de seguridad
+function getActiveUnit() {
+  return getUnitInfo();
+}
+
 // Plantillas predeterminadas de ejemplo
 const templates = {
   iel: {
@@ -2466,12 +2471,27 @@ window.sendAiUserMessage = async function() {
   inputEl.value = '';
   appendChatMessage('user', userText);
 
-  // Si es el primer mensaje de la conversación, contextualizamos la unidad de UTESA activa
-  if (aiState.chatHistory.length === 0) {
-    const u = getActiveUnit();
-    const tipoActual = u.type || 'Carrera';
-    const hasFiles = aiState.files.length > 0;
-    const initialContext = `Contexto Institucional UTESA:
+  // Placeholder temporal con indicador animado
+  const container = document.getElementById('aiChatMessages');
+  const loadingDiv = document.createElement('div');
+  loadingDiv.id = 'aiChatLoadingPlaceholder';
+  loadingDiv.className = 'text-xs text-slate-500 italic p-2 flex items-center gap-2 bg-slate-100/80 rounded-lg border border-slate-200';
+  loadingDiv.innerHTML = `
+    <svg class="w-3.5 h-3.5 text-emerald-700 animate-spin shrink-0" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
+    <span>El Asistente Institucional de UTESA está redactando su respuesta...</span>
+  `;
+  if (container) {
+    container.appendChild(loadingDiv);
+    container.scrollTop = container.scrollHeight;
+  }
+
+  try {
+    // Si es el primer mensaje de la conversación, contextualizamos la unidad de UTESA activa
+    if (aiState.chatHistory.length === 0) {
+      const u = getUnitInfo();
+      const tipoActual = u.tipo || state.tipoUnidad || 'Carrera';
+      const hasFiles = aiState.files.length > 0;
+      const initialContext = `Contexto Institucional UTESA:
 El usuario es el Director(a) o Responsable de ${u.displayTitle} (${tipoActual}).
 ${hasFiles ? `Tiene cargados ${aiState.files.length} documento(s) de evidencia en el panel.` : 'Aún no ha cargado documentos de evidencia en el panel.'}
 
@@ -2479,21 +2499,11 @@ Mensaje del usuario:
 "${userText}"
 
 Instrucción: Respóndele directamente de manera cordial, ejecutiva e institucional como Asistente de Planificación de UTESA. Dale la bienvenida a su área (${u.displayTitle}) y oriéntalo sobre cómo puedes ayudarle con sus evidencias o responde a su consulta. NUNCA muestres notas de razonamiento interno ni opciones de redacción.`;
-    aiState.chatHistory.push({ role: 'user', content: initialContext });
-  } else {
-    aiState.chatHistory.push({ role: 'user', content: userText });
-  }
+      aiState.chatHistory.push({ role: 'user', content: initialContext });
+    } else {
+      aiState.chatHistory.push({ role: 'user', content: userText });
+    }
 
-  // Placeholder temporal
-  const container = document.getElementById('aiChatMessages');
-  const loadingDiv = document.createElement('div');
-  loadingDiv.id = 'aiChatLoadingPlaceholder';
-  loadingDiv.className = 'text-xs text-slate-400 italic p-2';
-  loadingDiv.textContent = 'La IA está procesando tu respuesta e integrando las evidencias...';
-  container.appendChild(loadingDiv);
-  container.scrollTop = container.scrollHeight;
-
-  try {
     const aiResponse = await callGeminiApi(aiState.chatHistory);
     aiState.chatHistory.push({ role: 'assistant', content: aiResponse });
 
@@ -2505,6 +2515,7 @@ Instrucción: Respóndele directamente de manera cordial, ejecutiva e institucio
     const btnApply = document.getElementById('btnApplyAiToFoda');
     if (btnApply) btnApply.disabled = false;
   } catch (err) {
+    console.error("Error en diálogo con IA:", err);
     const loader = document.getElementById('aiChatLoadingPlaceholder');
     if (loader) loader.remove();
     alert(`Error en el diálogo con la IA: ${err.message}`);
