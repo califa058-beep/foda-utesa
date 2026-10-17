@@ -134,19 +134,35 @@
       <!-- COLUMNA IZQUIERDA: Panel de Trabajo (Formulario & Ajustes) -->
       <section class="no-print lg:col-span-5 bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
         
+        <!-- Selector Destacado de Método de Llenado: Manual vs IA -->
+        <div class="bg-gradient-to-r from-emerald-50/80 via-slate-50 to-white px-4 py-2.5 border-b border-slate-200 flex items-center justify-between gap-2 flex-wrap">
+          <div class="flex items-center gap-1.5 text-xs text-slate-700 font-bold">
+            <span class="w-2 h-2 rounded-full bg-emerald-600"></span>
+            <span>Elige cómo completar el FODA:</span>
+          </div>
+          <div class="inline-flex rounded-lg bg-slate-200/90 p-0.5 text-xs font-semibold shadow-inner">
+            <button type="button" id="modeSelectBtnManual" onclick="switchTab('form')" class="px-3 py-1 rounded-md transition shadow-2xs bg-white text-emerald-800 font-bold flex items-center gap-1.5">
+              <span>✍️ Llenado Manual</span>
+            </button>
+            <button type="button" id="modeSelectBtnAi" onclick="switchTab('ai')" class="px-3 py-1 rounded-md transition text-slate-600 hover:text-slate-900 font-semibold flex items-center gap-1.5">
+              <span>🤖 Llenado con IA</span>
+            </button>
+          </div>
+        </div>
+
         <!-- Pestañas del Editor -->
         <div class="border-b border-slate-200 bg-slate-50 flex">
-          <button type="button" id="tabBtnForm" onclick="switchTab('form')" class="flex-1 py-3 px-3 text-xs font-bold text-utesa-green border-b-2 border-utesa-green bg-white transition flex items-center justify-center gap-1.5">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-            <span>1. Formulario</span>
-          </button>
-          <button type="button" id="tabBtnReview" onclick="switchTab('review')" class="flex-1 py-3 px-2 text-xs font-semibold text-slate-500 hover:text-slate-800 transition flex items-center justify-center gap-1">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
-            <span>2. Redacción</span>
+          <button type="button" id="tabBtnForm" onclick="switchTab('form')" class="flex-1 py-3 px-2 text-xs font-bold text-utesa-green border-b-2 border-utesa-green bg-white transition flex items-center justify-center gap-1 shadow-2xs">
+            <svg class="w-4 h-4 text-emerald-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+            <span>1. Manual</span>
           </button>
           <button type="button" id="tabBtnAI" onclick="switchTab('ai')" class="flex-1 py-3 px-2 text-xs font-semibold text-slate-500 hover:text-slate-800 transition flex items-center justify-center gap-1 text-emerald-700 hover:bg-emerald-50">
             <svg class="w-4 h-4 text-emerald-600 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-            <span class="font-bold">Asistente IA</span>
+            <span class="font-bold">2. Con IA</span>
+          </button>
+          <button type="button" id="tabBtnReview" onclick="switchTab('review')" class="flex-1 py-3 px-2 text-xs font-semibold text-slate-500 hover:text-slate-800 transition flex items-center justify-center gap-1">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+            <span>3. Redacción</span>
           </button>
           <button type="button" id="tabBtnSaved" onclick="switchTab('saved')" class="flex-1 py-3 px-2 text-xs font-semibold text-slate-500 hover:text-slate-800 transition flex items-center justify-center gap-1 relative">
             <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path></svg>
@@ -159,9 +175,24 @@
           </button>
         </div>
 
-        <!-- CONTENIDO PESTAÑA 1: FORMULARIO FODA -->
-        <div id="tabContentForm" class="p-5 max-h-[calc(100vh-210px)] overflow-y-auto space-y-6">
+        <!-- CONTENIDO PESTAÑA 1: FORMULARIO FODA (LLENADO MANUAL) -->
+        <div id="tabContentForm" class="p-5 max-h-[calc(100vh-210px)] overflow-y-auto space-y-5">
           
+          <!-- Banner Indicador de Modo Manual con acceso rápido a Modo IA -->
+          <div class="p-3 bg-emerald-50/70 border border-emerald-200 rounded-xl flex items-center justify-between gap-3 text-xs">
+            <div class="flex items-center gap-2">
+              <span class="text-base select-none">✍️</span>
+              <div>
+                <span class="font-bold text-emerald-950">Estás en Modo Llenado Manual</span>
+                <p class="text-[11px] text-emerald-800">Digita tus datos y viñetas directamente o carga un ejemplo de referencia.</p>
+              </div>
+            </div>
+            <button type="button" onclick="switchTab('ai')" class="shrink-0 px-2.5 py-1.5 rounded-lg bg-white border border-emerald-300 text-emerald-800 font-bold hover:bg-emerald-600 hover:text-white transition shadow-2xs text-[11px] flex items-center gap-1">
+              <span>🤖 Cambiar a Llenar con IA</span>
+              <span>→</span>
+            </button>
+          </div>
+
           <!-- Bloque A: Datos Generales -->
           <div>
             <h2 class="text-xs font-bold uppercase tracking-wider text-utesa-green flex items-center gap-1.5 mb-3">
@@ -444,6 +475,21 @@
             </div>
           </div>
 
+          <!-- Banner Indicador de Modo IA con acceso rápido a Modo Manual -->
+          <div class="p-3 bg-white border border-slate-200 rounded-xl flex items-center justify-between gap-3 text-xs shadow-2xs">
+            <div class="flex items-center gap-2">
+              <span class="text-base select-none">🤖</span>
+              <div>
+                <span class="font-bold text-slate-800">Estás en Modo con Inteligencia Artificial</span>
+                <p class="text-[11px] text-slate-500">Carga evidencias de tu POA o escribe en el chat para formular el FODA.</p>
+              </div>
+            </div>
+            <button type="button" onclick="switchTab('form')" class="shrink-0 px-2.5 py-1.5 rounded-lg bg-slate-100 border border-slate-300 text-slate-700 font-bold hover:bg-emerald-50 hover:text-emerald-800 hover:border-emerald-300 transition shadow-2xs text-[11px] flex items-center gap-1">
+              <span>✍️ Cambiar a Llenado Manual</span>
+              <span>→</span>
+            </button>
+          </div>
+
           <!-- Alerta de Clave API requerida si no está guardada -->
           <div id="aiKeyAlert" class="hidden p-3 rounded-lg border border-amber-300 bg-amber-50 text-amber-900 text-xs flex items-start gap-2">
             <svg class="w-4 h-4 text-amber-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
@@ -702,6 +748,22 @@
           content.classList.add('hidden');
         }
       });
+
+      // Sincronizar el selector superior de modo (Manual vs IA)
+      const btnManual = document.getElementById('modeSelectBtnManual');
+      const btnAi = document.getElementById('modeSelectBtnAi');
+      if (btnManual && btnAi) {
+        if (tab === 'form') {
+          btnManual.className = "px-3 py-1 rounded-md transition shadow-2xs bg-white text-emerald-800 font-bold flex items-center gap-1.5";
+          btnAi.className = "px-3 py-1 rounded-md transition text-slate-600 hover:text-slate-900 font-semibold flex items-center gap-1.5";
+        } else if (tab === 'ai') {
+          btnManual.className = "px-3 py-1 rounded-md transition text-slate-600 hover:text-slate-900 font-semibold flex items-center gap-1.5";
+          btnAi.className = "px-3 py-1 rounded-md transition shadow-2xs bg-emerald-700 text-white font-bold flex items-center gap-1.5";
+        } else {
+          btnManual.className = "px-3 py-1 rounded-md transition text-slate-600 hover:text-slate-900 font-semibold flex items-center gap-1.5";
+          btnAi.className = "px-3 py-1 rounded-md transition text-slate-600 hover:text-slate-900 font-semibold flex items-center gap-1.5";
+        }
+      }
 
       if (tab === 'saved' && typeof window.renderSavedFodaList === 'function') {
         window.renderSavedFodaList();
