@@ -2250,7 +2250,23 @@ async function callGeminiApi(messagesPayload) {
     parts: [{ text: m.content }]
   }));
 
-  const requestBody = JSON.stringify({
+  const systemInstruction = {
+    parts: [{
+      text: "Eres el Asistente Institucional de Planificación Estratégica y Elaboración de FODA de la Universidad Tecnológica de Santiago (UTESA). Tu objetivo es interactuar de manera ejecutiva, cordial y profesional con directores de carrera, coordinadores y directores de departamento. Ayúdalos a auditar su POA, recopilar evidencias, validar metas pendientes y redactar los 4 cuadrantes del FODA (Fortalezas, Debilidades, Oportunidades y Amenazas). Responde SIEMPRE de forma directa, enérgica y en español formal. NUNCA muestres notas de análisis interno, traducciones explicativas ni listas de opciones de cómo saludar o responder. Responde directamente con el mensaje institucional."
+    }]
+  };
+
+  const requestBodyWithSystem = JSON.stringify({
+    systemInstruction: systemInstruction,
+    contents: contents,
+    generationConfig: {
+      temperature: 0.3,
+      topP: 0.95,
+      maxOutputTokens: 2048
+    }
+  });
+
+  const requestBodyFallback = JSON.stringify({
     contents: contents,
     generationConfig: {
       temperature: 0.3,
@@ -2323,22 +2339,22 @@ async function callGeminiApi(messagesPayload) {
     if (model.includes('tts') || model.includes('audio')) continue;
 
     const endpoints = [
-      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${aiState.apiKey}`,
-      `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${aiState.apiKey}`
+      { url: `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${aiState.apiKey}`, body: requestBodyWithSystem },
+      { url: `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${aiState.apiKey}`, body: requestBodyFallback }
     ];
 
-    for (const url of endpoints) {
+    for (const ep of endpoints) {
       try {
-        const response = await fetch(url, {
+        const response = await fetch(ep.url, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: requestBody
+          body: ep.body
         });
 
         if (response.ok) {
           const data = await response.json();
           const candidate = data.candidates?.[0];
-          const textOutput = candidate?.content?.parts?.[0]?.text;
+          const textOutput = candidate?.content?.parts?.map(p => p.text).filter(Boolean).join('\n');
           if (textOutput) {
             return textOutput;
           }
@@ -2450,7 +2466,23 @@ window.sendAiUserMessage = async function() {
   inputEl.value = '';
   appendChatMessage('user', userText);
 
-  aiState.chatHistory.push({ role: 'user', content: userText });
+  // Si es el primer mensaje de la conversación, contextualizamos la unidad de UTESA activa
+  if (aiState.chatHistory.length === 0) {
+    const u = getActiveUnit();
+    const tipoActual = u.type || 'Carrera';
+    const hasFiles = aiState.files.length > 0;
+    const initialContext = `Contexto Institucional UTESA:
+El usuario es el Director(a) o Responsable de ${u.displayTitle} (${tipoActual}).
+${hasFiles ? `Tiene cargados ${aiState.files.length} documento(s) de evidencia en el panel.` : 'Aún no ha cargado documentos de evidencia en el panel.'}
+
+Mensaje del usuario:
+"${userText}"
+
+Instrucción: Respóndele directamente de manera cordial, ejecutiva e institucional como Asistente de Planificación de UTESA. Dale la bienvenida a su área (${u.displayTitle}) y oriéntalo sobre cómo puedes ayudarle con sus evidencias o responde a su consulta. NUNCA muestres notas de razonamiento interno ni opciones de redacción.`;
+    aiState.chatHistory.push({ role: 'user', content: initialContext });
+  } else {
+    aiState.chatHistory.push({ role: 'user', content: userText });
+  }
 
   // Placeholder temporal
   const container = document.getElementById('aiChatMessages');
