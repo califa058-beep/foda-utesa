@@ -681,19 +681,28 @@
   <!-- Script para alternar pestañas del panel lateral -->
   <script>
     function switchTab(tab) {
-      const tabs = ['form', 'review', 'ai', 'saved', 'guide'];
-      tabs.forEach(t => {
-        const btn = document.getElementById('tabBtn' + t.charAt(0).toUpperCase() + t.slice(1));
-        const content = document.getElementById('tabContent' + t.charAt(0).toUpperCase() + t.slice(1));
+      const tabMap = {
+        'form': { btn: 'tabBtnForm', content: 'tabContentForm' },
+        'review': { btn: 'tabBtnReview', content: 'tabContentReview' },
+        'ai': { btn: 'tabBtnAI', content: 'tabContentAI' },
+        'saved': { btn: 'tabBtnSaved', content: 'tabContentSaved' },
+        'guide': { btn: 'tabBtnGuide', content: 'tabContentGuide' }
+      };
+
+      Object.keys(tabMap).forEach(key => {
+        const item = tabMap[key];
+        const btn = document.getElementById(item.btn);
+        const content = document.getElementById(item.content);
         if (!btn || !content) return;
-        if (t === tab) {
-          btn.className = "flex-1 py-3 px-2 text-xs font-bold text-utesa-green border-b-2 border-utesa-green bg-white transition flex items-center justify-center gap-1";
+        if (key === tab) {
+          btn.className = "flex-1 py-3 px-2 text-xs font-bold text-utesa-green border-b-2 border-utesa-green bg-white transition flex items-center justify-center gap-1 shadow-2xs";
           content.classList.remove('hidden');
         } else {
-          btn.className = "flex-1 py-3 px-2 text-xs font-semibold text-slate-500 hover:text-slate-800 transition flex items-center justify-center gap-1";
+          btn.className = "flex-1 py-3 px-2 text-xs font-semibold text-slate-500 hover:text-slate-800 transition flex items-center justify-center gap-1 hover:bg-slate-100/60";
           content.classList.add('hidden');
         }
       });
+
       if (tab === 'saved' && typeof window.renderSavedFodaList === 'function') {
         window.renderSavedFodaList();
       }
