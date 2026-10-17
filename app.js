@@ -2269,7 +2269,12 @@ async function callGeminiApi(messagesPayload) {
       const listData = await listRes.json();
       if (Array.isArray(listData.models)) {
         availableModels = listData.models
-          .filter(m => m.supportedGenerationMethods && m.supportedGenerationMethods.includes('generateContent'))
+          .filter(m => {
+            const hasGenerate = m.supportedGenerationMethods && m.supportedGenerationMethods.includes('generateContent');
+            const name = (m.name || '').toLowerCase();
+            const isTtsOrAudio = name.includes('tts') || name.includes('audio') || name.includes('whisper') || name.includes('embedding');
+            return hasGenerate && !isTtsOrAudio;
+          })
           .map(m => m.name.replace(/^models\//, ''));
       }
     } else {
@@ -2282,30 +2287,30 @@ async function callGeminiApi(messagesPayload) {
 
   // Si la clave no es válida o está deshabilitada, informar de inmediato
   if (authErrorMessage && !availableModels.length) {
-    // Si el error es de clave inválida
     if (authErrorMessage.toLowerCase().includes('api key') || authErrorMessage.toLowerCase().includes('permission') || authErrorMessage.toLowerCase().includes('invalid')) {
       throw new Error(`La clave API no es válida o no está activa en Google AI Studio: ${authErrorMessage}`);
     }
   }
 
-  // Lista de modelos preferidos ordenados por calidad/velocidad
+  // Lista de modelos de texto comprobados ordenados por prioridad
   const priorityList = [
-    'gemini-2.5-flash',
     'gemini-2.0-flash',
-    'gemini-2.0-flash-exp',
+    'gemini-2.0-flash-001',
     'gemini-1.5-flash',
-    'gemini-1.5-flash-8b',
+    'gemini-1.5-flash-002',
     'gemini-1.5-flash-latest',
+    'gemini-1.5-flash-8b',
     'gemini-1.5-pro',
-    'gemini-1.5-pro-latest'
+    'gemini-1.5-pro-002',
+    'gemini-2.5-flash'
   ];
 
-  // Intersectar con los modelos realmente disponibles si se pudieron obtener
+  // Intersectar con los modelos realmente disponibles que soporten texto
   let targetModels = [];
   if (availableModels.length > 0) {
     targetModels = [
       ...priorityList.filter(p => availableModels.includes(p)),
-      ...availableModels.filter(m => !priorityList.includes(m))
+      ...availableModels.filter(m => !priorityList.includes(m) && !m.includes('tts') && !m.includes('audio'))
     ];
   } else {
     targetModels = priorityList;
@@ -2314,6 +2319,9 @@ async function callGeminiApi(messagesPayload) {
   let lastError = authErrorMessage || null;
 
   for (const model of targetModels) {
+    // Si accidentalmente tiene tts o audio, omitir
+    if (model.includes('tts') || model.includes('audio')) continue;
+
     const endpoints = [
       `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${aiState.apiKey}`,
       `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${aiState.apiKey}`
@@ -2337,11 +2345,12 @@ async function callGeminiApi(messagesPayload) {
         } else {
           const errData = await response.json().catch(() => ({}));
           lastError = errData.error?.message || `Error ${response.status}: ${response.statusText}`;
-          if (response.status === 404) {
-            continue; // Probar siguiente endpoint o modelo
+          // Si el modelo es 404 o rechaza la modalidad (como TTS), continuar con el siguiente modelo de la lista
+          if (response.status === 404 || lastError.toLowerCase().includes('modalities') || lastError.toLowerCase().includes('not supported')) {
+            continue;
           }
-          // Si es error de cuota o clave, romper temprano para avisar
-          if (response.status === 400 || response.status === 403) {
+          // Si es clave inválida (403), lanzar error
+          if (response.status === 403 && lastError.toLowerCase().includes('api key')) {
             throw new Error(`Google API: ${lastError}`);
           }
         }
