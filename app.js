@@ -2236,6 +2236,43 @@ function formatAiResponseHtml(text) {
     .replace(/^\s*\d+\.\s*(.*)$/gm, '<li class="ml-3 list-decimal">$1</li>');
 }
 
+// Limpia notas de pensamiento, borradores o monólogos que algunos modelos puedan emitir
+function cleanAiResponse(text) {
+  if (!text) return '';
+  let cleaned = text.trim();
+
+  // 1. Eliminar bloques delimitados por etiquetas de pensamiento
+  cleaned = cleaned.replace(/<thought>[\s\S]*?<\/thought>/gi, '').trim();
+
+  // 2. Si el modelo imprimió monólogo interno o borradores ("User Role:", "*Draft", "Internal Monologue:"):
+  if (/(?:User Role|User Input|My Role|Draft \d|Internal Monologue|Refining for)/i.test(cleaned)) {
+    // Si contiene la respuesta final entrecomillada al final
+    const quoteMatches = [...cleaned.matchAll(/["“]([A-ZÁÉÍÓÚÑ¡¿][\s\S]+?)["”]/g)];
+    if (quoteMatches.length > 0) {
+      const lastQuote = quoteMatches[quoteMatches.length - 1][1].trim();
+      if (lastQuote.length > 35) {
+        return lastQuote;
+      }
+    }
+
+    // O si contiene un párrafo que empieza con saludo formal hacia el final
+    const lines = cleaned.split('\n');
+    let foundGreetingIndex = -1;
+    for (let i = lines.length - 1; i >= 0; i--) {
+      const line = lines[i].trim();
+      if (/^(Estimad[o|a]|Saludos|¡Hola|Hola,?\s+Director|Buenas)/i.test(line)) {
+        foundGreetingIndex = i;
+        break;
+      }
+    }
+    if (foundGreetingIndex >= 0) {
+      return lines.slice(foundGreetingIndex).join('\n').trim();
+    }
+  }
+
+  return cleaned;
+}
+
 /**
  * Llamada inteligente a la API de Google Gemini:
  * 1. Consulta dinámicamente qué modelos tiene habilitados la clave con models?key=...
@@ -2255,9 +2292,20 @@ async function callGeminiApi(messagesPayload) {
     parts: [{ text: m.content }]
   }));
 
+  const u = getUnitInfo();
+  const tipoActual = u.tipo || state.tipoUnidad || 'Carrera';
+  const hasFiles = aiState.files.length > 0;
+
   const systemInstruction = {
     parts: [{
-      text: "Eres el Asistente Institucional de Planificación Estratégica y Elaboración de FODA de la Universidad Tecnológica de Santiago (UTESA). Tu objetivo es interactuar de manera ejecutiva, cordial y profesional con directores de carrera, coordinadores y directores de departamento. Ayúdalos a auditar su POA, recopilar evidencias, validar metas pendientes y redactar los 4 cuadrantes del FODA (Fortalezas, Debilidades, Oportunidades y Amenazas). Responde SIEMPRE de forma directa, enérgica y en español formal. NUNCA muestres notas de análisis interno, traducciones explicativas ni listas de opciones de cómo saludar o responder. Responde directamente con el mensaje institucional."
+      text: `Eres el Asistente Institucional de Planificación Estratégica y Elaboración de FODA de la Universidad Tecnológica de Santiago (UTESA).
+Estás asistiendo en tiempo real al Director(a) o Responsable de ${u.displayTitle} (${tipoActual}).
+${hasFiles ? `El departamento tiene cargados ${aiState.files.length} documento(s) de evidencia en el sistema.` : 'Aún no hay documentos de evidencia cargados en este momento.'}
+
+DIRECTIVAS ESTRICTAS DE RESPUESTA:
+1. Responde SIEMPRE de forma directa, ejecutiva y en español institucional formal de UTESA.
+2. NUNCA muestres tu proceso de pensamiento, notas de rol, borradores preliminares (Draft 1, Internal Monologue), traducciones explicativas ni listas de opciones.
+3. Inicia tu respuesta DIRECTAMENTE con el mensaje institucional al usuario.`
     }]
   };
 
@@ -2265,7 +2313,7 @@ async function callGeminiApi(messagesPayload) {
     systemInstruction: systemInstruction,
     contents: contents,
     generationConfig: {
-      temperature: 0.3,
+      temperature: 0.2,
       topP: 0.95,
       maxOutputTokens: 2048
     }
@@ -2274,7 +2322,7 @@ async function callGeminiApi(messagesPayload) {
   const requestBodyFallback = JSON.stringify({
     contents: contents,
     generationConfig: {
-      temperature: 0.3,
+      temperature: 0.2,
       topP: 0.95,
       maxOutputTokens: 2048
     }
@@ -2359,7 +2407,15 @@ async function callGeminiApi(messagesPayload) {
         if (response.ok) {
           const data = await response.json();
           const candidate = data.candidates?.[0];
-          const textOutput = candidate?.content?.parts?.map(p => p.text).filter(Boolean).join('\n');
+          const parts = candidate?.content?.parts || [];
+          // Filtrar partes que sean pensamientos internos del modelo (thought: true)
+          const nonThoughtParts = parts.filter(p => !p.thought);
+          const rawOutput = (nonThoughtParts.length > 0 ? nonThoughtParts : parts)
+            .map(p => p.text)
+            .filter(Boolean)
+            .join('\n');
+
+          const textOutput = cleanAiResponse(rawOutput);
           if (textOutput) {
             return textOutput;
           }
@@ -2486,23 +2542,7 @@ window.sendAiUserMessage = async function() {
   }
 
   try {
-    // Si es el primer mensaje de la conversación, contextualizamos la unidad de UTESA activa
-    if (aiState.chatHistory.length === 0) {
-      const u = getUnitInfo();
-      const tipoActual = u.tipo || state.tipoUnidad || 'Carrera';
-      const hasFiles = aiState.files.length > 0;
-      const initialContext = `Contexto Institucional UTESA:
-El usuario es el Director(a) o Responsable de ${u.displayTitle} (${tipoActual}).
-${hasFiles ? `Tiene cargados ${aiState.files.length} documento(s) de evidencia en el panel.` : 'Aún no ha cargado documentos de evidencia en el panel.'}
-
-Mensaje del usuario:
-"${userText}"
-
-Instrucción: Respóndele directamente de manera cordial, ejecutiva e institucional como Asistente de Planificación de UTESA. Dale la bienvenida a su área (${u.displayTitle}) y oriéntalo sobre cómo puedes ayudarle con sus evidencias o responde a su consulta. NUNCA muestres notas de razonamiento interno ni opciones de redacción.`;
-      aiState.chatHistory.push({ role: 'user', content: initialContext });
-    } else {
-      aiState.chatHistory.push({ role: 'user', content: userText });
-    }
+    aiState.chatHistory.push({ role: 'user', content: userText });
 
     const aiResponse = await callGeminiApi(aiState.chatHistory);
     aiState.chatHistory.push({ role: 'assistant', content: aiResponse });
